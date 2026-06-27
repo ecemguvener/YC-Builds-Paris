@@ -79,7 +79,7 @@ export function registerIdentityRoutes(app: FastifyInstance, config: AppConfig) 
   app.post("/api/identity/init", async (request, reply) => {
     const payload = initIdentitySchema.parse(request.body ?? {});
     const id = `agent_${slugify(payload.agent_name)}_${randomId(8)}`;
-    const token = `barkan_live_${randomId(32)}`;
+    const token = `identity_live_${randomId(32)}`;
     const tools = [...new Set(payload.tools)] as ToolName[];
     const permissions = {
       "email.send": payload.permissions?.["email.send"] ?? tools.includes("email"),
@@ -138,8 +138,8 @@ export function registerIdentityRoutes(app: FastifyInstance, config: AppConfig) 
       tools: identity.tools,
       permissions: serializePermissions(identity),
       openclaw_env: {
-        BARKAN_API_URL: config.PUBLIC_API_URL,
-        BARKAN_IDENTITY_TOKEN: identity.token
+        IDENTITY_LAYER_API_URL: config.PUBLIC_API_URL,
+        AGENT_IDENTITY_TOKEN: identity.token
       },
       tool_endpoints: {
         email_send: `${config.PUBLIC_API_URL}/api/tools/email/send`,

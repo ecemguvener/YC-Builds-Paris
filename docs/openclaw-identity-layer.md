@@ -1,7 +1,7 @@
 # OpenClaw Identity Layer Integration
 
-Use Barkan as the permissioned automation layer in front of real-world tools.
-OpenClaw stays the agent brain. Barkan owns identity, permissions, execution, audit logs, and revocation.
+Use the identity layer as the permissioned automation layer in front of real-world tools.
+OpenClaw stays the agent brain. The identity layer owns identity, permissions, execution, audit logs, and revocation.
 
 ## 1. Initialize the identity layer
 
@@ -29,13 +29,13 @@ The response returns:
 ```json
 {
   "agent_id": "agent_maya_...",
-  "identity_token": "barkan_live_...",
+  "identity_token": "identity_live_...",
   "email": "maya-1234@agents.barkan.dev",
   "phone": "+1 415 555 1234",
   "calendar_url": "http://localhost:4001/calendar/agent_maya_...",
   "openclaw_env": {
-    "BARKAN_API_URL": "http://localhost:4001",
-    "BARKAN_IDENTITY_TOKEN": "barkan_live_..."
+    "IDENTITY_LAYER_API_URL": "http://localhost:4001",
+    "AGENT_IDENTITY_TOKEN": "identity_live_..."
   }
 }
 ```
@@ -45,20 +45,38 @@ The response returns:
 Give OpenClaw these environment variables or config values:
 
 ```bash
-BARKAN_API_URL=http://localhost:4001
-BARKAN_IDENTITY_TOKEN=barkan_live_...
+IDENTITY_LAYER_API_URL=http://localhost:4001
+AGENT_IDENTITY_TOKEN=identity_live_...
 ```
 
 OpenClaw should never receive raw Gmail, Twilio, calendar, or payment keys.
-It only receives the Barkan token.
+It only receives the identity token.
 
-## 3. Call Barkan tools from OpenClaw
+## 2a. Add the identity skill to OpenClaw
 
-Every real-world action goes through Barkan with the identity token:
+This repo includes a portable skill folder:
+
+```text
+openclaw-skills/identity-layer/
+  SKILL.md
+  client.js
+```
+
+Add that folder to your OpenClaw skills directory, or copy the instructions from
+`SKILL.md` into the OpenClaw agent. The skill tells OpenClaw:
+
+1. initialize identity before real-world actions,
+2. store `AGENT_IDENTITY_TOKEN`,
+3. call identity-layer email, phone, calendar, audit, and revoke endpoints,
+4. never use raw provider credentials.
+
+## 3. Call identity-layer tools from OpenClaw
+
+Every real-world action goes through the identity layer with the identity token:
 
 ```bash
 curl -sS http://localhost:4001/api/tools/email/send \
-  -H "authorization: Bearer $BARKAN_IDENTITY_TOKEN" \
+  -H "authorization: Bearer $AGENT_IDENTITY_TOKEN" \
   -H 'content-type: application/json' \
   -d '{
     "to": "demo@example.com",
@@ -72,7 +90,7 @@ Phone calls are demo-simulated but permissioned and audited:
 
 ```bash
 curl -sS http://localhost:4001/api/tools/phone/call \
-  -H "authorization: Bearer $BARKAN_IDENTITY_TOKEN" \
+  -H "authorization: Bearer $AGENT_IDENTITY_TOKEN" \
   -H 'content-type: application/json' \
   -d '{
     "to": "+14155550198",
@@ -85,7 +103,7 @@ Calendar booking is also demo-simulated and audited:
 
 ```bash
 curl -sS http://localhost:4001/api/tools/calendar/book \
-  -H "authorization: Bearer $BARKAN_IDENTITY_TOKEN" \
+  -H "authorization: Bearer $AGENT_IDENTITY_TOKEN" \
   -H 'content-type: application/json' \
   -d '{
     "title": "Customer discovery interview",
@@ -99,7 +117,7 @@ curl -sS http://localhost:4001/api/tools/calendar/book \
 
 ```bash
 curl -sS http://localhost:4001/api/identity/agent_maya_.../audit-log \
-  -H "authorization: Bearer $BARKAN_IDENTITY_TOKEN"
+  -H "authorization: Bearer $AGENT_IDENTITY_TOKEN"
 ```
 
 ## 5. Revoke the identity
@@ -107,7 +125,7 @@ curl -sS http://localhost:4001/api/identity/agent_maya_.../audit-log \
 ```bash
 curl -sS http://localhost:4001/api/identity/revoke \
   -X POST \
-  -H "authorization: Bearer $BARKAN_IDENTITY_TOKEN"
+  -H "authorization: Bearer $AGENT_IDENTITY_TOKEN"
 ```
 
 After revocation, tool calls using that token are blocked.
@@ -117,9 +135,9 @@ After revocation, tool calls using that token are blocked.
 1. Initialize identity for an OpenClaw agent.
 2. Copy the returned token into OpenClaw.
 3. Ask OpenClaw to validate a startup idea.
-4. OpenClaw calls Barkan email, phone, and calendar tools.
+4. OpenClaw calls the identity-layer email, phone, and calendar tools.
 5. Show the audit log and kill switch.
 
 Pitch line:
 
-> Barkan is the permissioned automation layer for AI agents. OpenClaw thinks; Barkan gives it safe real-world powers.
+> This is the permissioned automation layer for AI agents. OpenClaw thinks; the identity layer gives it safe real-world powers.
