@@ -5,6 +5,15 @@ import { z } from "zod";
 loadDotenv({ path: path.resolve(process.cwd(), ".env") });
 loadDotenv({ path: path.resolve(process.cwd(), "../../.env") });
 
+const optionalNonEmptyStringSchema = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalized = value.trim();
+  return normalized === "" ? undefined : normalized;
+}, z.string().min(1).optional());
+
 const environmentSchema = z.object({
   NODE_ENV: z.string().default("development"),
   API_PORT: z.coerce.number().default(4000),
@@ -13,9 +22,9 @@ const environmentSchema = z.object({
   MONGODB_URI: z.string().min(1).default("mongodb://127.0.0.1:27017/barkan"),
   SESSION_COOKIE_NAME: z.string().min(1).default("barkan_session"),
   SESSION_SECRET: z.string().min(16).default("dev-barkan-session-secret-change-me"),
-  ELEVENLABS_API_KEY: z.string().min(1).optional(),
+  ELEVENLABS_API_KEY: optionalNonEmptyStringSchema,
   ELEVENLABS_VOICE_ID: z.string().min(1).default("kPzsL2i3teMYv0FxEYQ6"),
-  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: optionalNonEmptyStringSchema,
   OPENAI_WIDGET_MODEL: z.string().min(1).default("gpt-5.4-2026-03-05").transform(normalizeConfiguredOpenAIWidgetModel),
   OPENAI_ACTION_MODEL: z.string().min(1).default("gpt-5.4-2026-03-05").transform(normalizeConfiguredOpenAIModel),
   OPENAI_ATLAS_MODEL: z.string().min(1).default("gpt-5.4-2026-03-05").transform(normalizeConfiguredOpenAIModel)

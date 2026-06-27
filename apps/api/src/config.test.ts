@@ -96,4 +96,14 @@ describe("loadConfig", () => {
     expect(loadConfig().PUBLIC_API_URL).toBe("http://localhost:4001");
   });
 
+  it("treats empty vendor API keys as unset", () => {
+    process.env.OPENAI_API_KEY = "   ";
+    process.env.ELEVENLABS_API_KEY = "";
+
+    const config = loadConfig();
+
+    expect(config.OPENAI_API_KEY).toBeUndefined();
+    expect(config.ELEVENLABS_API_KEY).toBeUndefined();
+  });
+
 });

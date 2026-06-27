@@ -3,8 +3,8 @@ Backing up the idea:
 
 new
 -> We are building the identity and permissions layer for AI agents that need to act in the real world.
-
-
+-> We let AI agents automate real-world tasks without giving them direct access to human accounts or raw API keys.
+-> We initialize an identity layer, give OpenClaw a unique token, and now OpenClaw can safely automate email, phone, and calendar actions through our permissioned API.
 
 
 
