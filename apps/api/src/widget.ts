@@ -976,7 +976,7 @@ async function streamOpenAIResponse(
       tokenUsage
     });
   } catch (error) {
-    reply.raw.write(`data: ${JSON.stringify({ type: "error", error: String(error) })}\n\n`);
+    reply.raw.write(`data: ${JSON.stringify({ type: "error", error: getErrorMessage(error) })}\n\n`);
     reply.raw.end();
     logOpenAIStreamLatency(timingContext, "stream-error", {
       error: getErrorMessage(error),

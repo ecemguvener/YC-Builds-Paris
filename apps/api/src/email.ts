@@ -416,7 +416,7 @@ export async function draftEmail(prompt: string, senderName: string, config: App
       return await draftWithOpenAI(prompt, senderName, config);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.warn("[email] OpenAI draft failed, using heuristic:", (error as Error).message);
+      console.warn("[email] OpenAI draft failed, using heuristic:", error instanceof Error ? error.message : String(error));
     }
   }
   return draftHeuristic(prompt, senderName);
@@ -521,7 +521,7 @@ export async function summarizeReply(subject: string, body: string, config: AppC
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.warn("[email] OpenAI summary failed, using heuristic:", (error as Error).message);
+      console.warn("[email] OpenAI summary failed, using heuristic:", error instanceof Error ? error.message : String(error));
     }
   }
   return { summary: summarizeHeuristic(body), suggestedReply: "Thanks for getting back to me — I'll follow up shortly." };

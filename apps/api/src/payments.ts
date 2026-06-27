@@ -501,7 +501,7 @@ export async function parsePurchaseFromText(prompt: string, accountId: string, c
       return await parseWithOpenAI(prompt, accountId, config);
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.warn("[payments] OpenAI parse failed, using heuristic:", (error as Error).message);
+      console.warn("[payments] OpenAI parse failed, using heuristic:", error instanceof Error ? error.message : String(error));
     }
   }
   return parseHeuristic(prompt, accountId);
