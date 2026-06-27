@@ -1,0 +1,17 @@
+worker/node_modules/
+worker/.dev.vars
+worker/.wrangler/
+worker/wrangler*.log
+node_modules/
+apps/*/dist/
+packages/*/dist/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example
+.claude/
+coding-plans/
+.serval/debug/
+**/.serval/debug/
+.barkan/debug/
+**/.barkan/debug/
