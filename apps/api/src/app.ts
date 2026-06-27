@@ -9,6 +9,7 @@ import { registerAtlasAgentBridge } from "./atlas/agent-bridge.js";
 import { registerAtlasRoutes } from "./atlas/routes.js";
 import { registerAuthRoutes } from "./auth.js";
 import { registerDashboardChatRoutes } from "./dashboard-chat.js";
+import { registerIdentityRoutes } from "./identity.js";
 import { registerSiteRoutes } from "./sites.js";
 import { registerWidgetRoutes } from "./widget.js";
 
@@ -72,6 +73,7 @@ export async function buildApp(config: AppConfig, collections: Collections) {
   registerAtlasRoutes(app, collections, config);
   registerAuthRoutes(app, collections, config);
   registerDashboardChatRoutes(app, collections, config);
+  registerIdentityRoutes(app, config);
   registerSiteRoutes(app, collections, config);
   await registerWidgetRoutes(app, collections, config);
 
