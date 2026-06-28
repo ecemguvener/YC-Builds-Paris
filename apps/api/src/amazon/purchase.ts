@@ -263,6 +263,14 @@ async function maybeEnterCardFromEnv(page: import("playwright").Page): Promise<v
       await page.locator("select[name='ppw-expirationDate_month']").selectOption(mm ?? "").catch(() => undefined);
       await page.locator("select[name='ppw-expirationDate_year']").selectOption(`20${(yy ?? "").slice(-2)}`).catch(() => undefined);
     }
+    const cvc = process.env.AMAZON_CARD_CVC;
+    if (cvc) {
+      await page
+        .locator("input[autocomplete='cc-csc'], input[name*='cvv'], input[name*='cvc'], input[name='ppw-cardVerificationNumber']")
+        .first()
+        .fill(cvc)
+        .catch(() => undefined);
+    }
     await page.getByRole("button", { name: /add your card|use this card|continue/i }).first().click().catch(() => undefined);
   } catch {
     /* fall back to default card */
