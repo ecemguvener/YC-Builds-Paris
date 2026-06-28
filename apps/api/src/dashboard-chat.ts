@@ -466,7 +466,7 @@ async function runChatPurchase(
   }
 
   const accountId = site._id.toHexString();
-  provisionPaymentIdentity(accountId);
+  await provisionPaymentIdentity(accountId, config);
 
   try {
     const { purchase, parsed } = await createPurchaseFromPrompt(accountId, text, config);

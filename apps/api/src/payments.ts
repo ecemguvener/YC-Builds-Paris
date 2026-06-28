@@ -140,16 +140,28 @@ const policySchema = z.object({
 // Provisioning + lookups
 // ---------------------------------------------------------------------------
 
-export function provisionPaymentIdentity(accountId: string): PaymentIdentity {
+export async function provisionPaymentIdentity(accountId: string, config?: AppConfig): Promise<PaymentIdentity> {
   const existing = paymentIdentityByAccount.get(accountId);
   if (existing) {
     return existing;
   }
-  const card = mockCreateCard(accountId);
+
+  let provider: Provider = "mock";
+  let card = mockCreateCard(accountId);
+  if (config?.STRIPE_SECRET_KEY) {
+    try {
+      card = await stripeCreateCard(config.STRIPE_SECRET_KEY);
+      provider = "stripe";
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn("[payments] Stripe issuing failed, using mock card:", (error as Error).message);
+    }
+  }
+
   const identity: PaymentIdentity = {
     id: `payid_${randomId(8)}`,
     accountId,
-    provider: "mock",
+    provider,
     providerCardId: card.providerCardId,
     cardLast4: card.cardLast4,
     status: "active",
@@ -160,7 +172,7 @@ export function provisionPaymentIdentity(accountId: string): PaymentIdentity {
   const now = new Date();
   policyByAccount.set(accountId, { accountId, ...DEFAULT_POLICY, createdAt: now, updatedAt: now });
 
-  recordIdentityAudit(accountId, "payment.provision", "allowed", `Virtual card •••• ${identity.cardLast4} provisioned.`);
+  recordIdentityAudit(accountId, "payment.provision", "allowed", `${provider === "stripe" ? "Stripe" : "Virtual"} card •••• ${identity.cardLast4} provisioned.`);
   return identity;
 }
 
@@ -268,7 +280,7 @@ export function decidePurchase(
   return purchase;
 }
 
-export function executeApprovedPurchase(accountId: string, requestId: string, idempotencyKey?: string): Transaction {
+export async function executeApprovedPurchase(accountId: string, requestId: string, idempotencyKey?: string, config?: AppConfig): Promise<Transaction> {
   const purchase = requestById.get(requestId);
   if (!purchase || purchase.accountId !== accountId) {
     throw new PaymentError(404, "purchase request not found");
@@ -294,7 +306,21 @@ export function executeApprovedPurchase(accountId: string, requestId: string, id
     throw new PaymentError(409, "no active payment identity");
   }
 
-  const result = mockCharge({ merchantName: purchase.merchantName, amount: purchase.amount, currency: purchase.currency });
+  let result: { providerTransactionId: string; status: TransactionStatus; reason: string };
+  if (paymentIdentity.provider === "stripe" && config?.STRIPE_SECRET_KEY) {
+    try {
+      result = await stripeAuthorize(config.STRIPE_SECRET_KEY, paymentIdentity.providerCardId, {
+        merchantName: purchase.merchantName,
+        amount: purchase.amount
+      });
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.warn("[payments] Stripe authorization failed, using mock charge:", (error as Error).message);
+      result = mockCharge({ merchantName: purchase.merchantName, amount: purchase.amount, currency: purchase.currency });
+    }
+  } else {
+    result = mockCharge({ merchantName: purchase.merchantName, amount: purchase.amount, currency: purchase.currency });
+  }
   const txn: Transaction = {
     id: `txn_${randomId(8)}`,
     accountId,
@@ -414,6 +440,69 @@ export function evaluatePurchaseRequest(
 
 function mockCreateCard(accountId: string): { providerCardId: string; cardLast4: string } {
   return { providerCardId: `mock_card_${accountId}`, cardLast4: "4242" };
+}
+
+// ---------------------------------------------------------------------------
+// Stripe Issuing (test mode) — real virtual cards via the REST API (form-encoded).
+// ---------------------------------------------------------------------------
+
+async function stripeRequest(secretKey: string, path: string, params: Record<string, string | number>): Promise<Record<string, unknown>> {
+  const body = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    body.append(key, String(value));
+  }
+  const response = await fetch(`https://api.stripe.com/v1/${path}`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${secretKey}`, "content-type": "application/x-www-form-urlencoded" },
+    body
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new PaymentError(502, `Stripe ${response.status}: ${text.slice(0, 300)}`);
+  }
+  return JSON.parse(text) as Record<string, unknown>;
+}
+
+/** Create a real test-mode cardholder + virtual card; returns its id and last4. */
+async function stripeCreateCard(secretKey: string): Promise<{ providerCardId: string; cardLast4: string }> {
+  const cardholder = await stripeRequest(secretKey, "issuing/cardholders", {
+    type: "individual",
+    name: "Aidentity Agent",
+    email: "agent@aidentity.space",
+    phone_number: "+15555550123",
+    "billing[address][line1]": "1 Market Street",
+    "billing[address][city]": "San Francisco",
+    "billing[address][state]": "CA",
+    "billing[address][postal_code]": "94105",
+    "billing[address][country]": "US"
+  });
+  const card = await stripeRequest(secretKey, "issuing/cards", {
+    cardholder: String(cardholder.id),
+    currency: "usd",
+    type: "virtual",
+    status: "active"
+  });
+  return { providerCardId: String(card.id), cardLast4: String(card.last4 ?? "****") };
+}
+
+/** Simulate a real authorization on the issued card via Stripe test helpers. */
+async function stripeAuthorize(
+  secretKey: string,
+  cardId: string,
+  input: { merchantName: string; amount: number }
+): Promise<{ providerTransactionId: string; status: TransactionStatus; reason: string }> {
+  const auth = await stripeRequest(secretKey, "test_helpers/issuing/authorizations", {
+    card: cardId,
+    amount: Math.round(input.amount * 100),
+    currency: "usd",
+    "merchant_data[name]": input.merchantName,
+    "merchant_data[category]": "computer_software_stores"
+  });
+  const id = String(auth.id ?? `iauth_${randomId(8)}`);
+  if (auth.approved === false) {
+    return { providerTransactionId: id, status: "declined", reason: `Stripe authorization declined for ${input.merchantName}` };
+  }
+  return { providerTransactionId: id, status: "successful", reason: `Stripe authorization ${id} approved for ${input.merchantName}` };
 }
 
 function mockCharge(input: { merchantName: string; amount: number; currency: string }): {
@@ -694,8 +783,8 @@ export function registerPaymentRoutes(app: FastifyInstance, config: AppConfig) {
     const identity = readBearerIdentity(request);
     if (!identity) return reply.code(401).send({ error: "missing or invalid identity token" });
     const { requestId } = request.params as { requestId: string };
-    return runPayment(reply, () => {
-      const txn = executeApprovedPurchase(identity.id, requestId, readIdempotencyKey(request));
+    return runPayment(reply, async () => {
+      const txn = await executeApprovedPurchase(identity.id, requestId, readIdempotencyKey(request), config);
       return serializeTransaction(txn);
     });
   });
@@ -743,7 +832,7 @@ export function registerSitePaymentRoutes(app: FastifyInstance, collections: Col
       return null;
     }
     const accountId = site._id.toHexString();
-    provisionPaymentIdentity(accountId); // lazy: card + default policy on first touch
+    await provisionPaymentIdentity(accountId, config); // lazy: card + default policy on first touch
     return accountId;
   };
 
@@ -790,7 +879,7 @@ export function registerSitePaymentRoutes(app: FastifyInstance, collections: Col
     const accountId = await resolveSiteAccount(request, reply);
     if (!accountId) return;
     const { requestId } = request.params as { requestId: string };
-    return runPayment(reply, () => serializeTransaction(executeApprovedPurchase(accountId, requestId, readIdempotencyKey(request))));
+    return runPayment(reply, async () => serializeTransaction(await executeApprovedPurchase(accountId, requestId, readIdempotencyKey(request), config)));
   });
 
   app.patch("/api/sites/:siteId/payments/policy", async (request, reply) => {

@@ -39,7 +39,10 @@ const environmentSchema = z.object({
   // every outbound email is really delivered to this address (from Resend's
   // test sender), so the app sends real mail you can see. The activity log
   // still records the originally-intended recipient.
-  EMAIL_SANDBOX_REDIRECT_TO: optionalNonEmptyStringSchema
+  EMAIL_SANDBOX_REDIRECT_TO: optionalNonEmptyStringSchema,
+  // Stripe Issuing (test mode). When set, the payment tool provisions a real
+  // virtual card and simulates authorizations via Stripe; unset => mock card.
+  STRIPE_SECRET_KEY: optionalNonEmptyStringSchema
 }).transform((environment) => {
   return {
     ...environment,
