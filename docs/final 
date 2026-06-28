@@ -18,19 +18,17 @@ The wow: the agent can start a task today, call people, email them, wait for rep
 
 Ecem, to camera:
 
-"Today, AI can think. What they are missing is a real-world identity. It cannot pick up the phone, call, pay for something, or wait three days for someone to reply."
+ Today, AI can think but What it is missing is a real-world identity. It cannot pick up the phone, call, pay for something, or wait days for a reply. 
 
-Maxence:
+They can write a plan, but they cannot execute the plan. That’s the biggest missing piece of agentic AI, AI has a brain but no identity.
 
-They can write a plan, but they cannot execute the plan. 
 ECEM 
 
-"So we built the missing layer: a real-world identity for AI agents."
+So instead of building another agent, () we built missing layer; the infrastructure that gives every AI agent a real-world identity.
 
-In under a minute, any agent including physical robot, openclaw, autonomous company builder gets their own identity which include phone number, payment access etc.
 M
 
-This is how agents start doing work in the real world. This is infrastructure for agentic workers. IT HAS IT'S OWN IDENTITIY , OWN PERSON. 
+"This is not another chatbot. This is how agents start doing work in the real world. This is infrastructure for agentic workers. IT HAS IT'S OWN IDENTITIY , OWN PERSON. 
 
 Screen: show the dashboard/chatbox or terminal ready to create an agent identity.
 
@@ -40,57 +38,48 @@ Here we can see that each agentic identity wth logs of phone etc ect
 
 Maxence:
 
-Let's create a new agent identity.
+"Let's hire our first AI employee, creating a new agent"
 
 Screen: initialize identity. Show the agent name, runtime `openclaw`, and tools: phone, email, calendar, payment.
 
+In under a minute, any agent including physical robot, openclaw, autonomous company builder gets their own identity which include phone number, payment access. We become everything that lets that brain operate in the real world.
+
 Ecem:
 
-Whats amazing is that this isn’t tied to one framework.
+Whats very amazing this isn’t tied to one framework.
 
-You can connect an existing OpenClaw agent.
+You can connect an existing OpenClaw runtime…
 
 or deploy it with any other agent.
 
-Then we choose what this agent is allowed to use: phone, email, calendar, payments etc. Every permission is completely configurable.
+Then we choose what this agent is allowed to use: phone, email, calendar, and payments etc Every permission is completely configurable.
 
 Maxence:
 
-"This matters because agents need power, but they also need boundaries. You do not want to hand an agent your raw provider credentials and hope nothing goes wrong."
+"This matters because agents need power, but they also need boundaries. You do not want to hand an agent your raw credentials and hope nothing goes wrong."
 
-<!-- Ecem:
+Ecem:
 
 This is the integration pain we remove. Normally you would have to connect voice providers like ElevenLabs, phone providers, payment cards, authorization, webhooks, and audit logs.
-
-
-Maxence:
-
-"Now the agent has an identity. It has a phone number. It has an email. It has payment access. It has a calendar. And every action is permissioned and logged." -->
+ ADD THIS TO WHY ARE WE BUILDING THIS
 
 Ecem:
 
-"The mental model is simple: The agent is the brain. Our identity layer is the memory of what happened."
+"Let's test the thing that makes it real to show the difference. Find a hairdresser near me, call them, ask whether they have availability this afternoon, and book the appointment.
 
-Screen: show cards or JSON response for phone, email, calendar URL, payment, permissions.
+If this were a normal chatbot, it would tell me:
 
-### 1:30-2:35 - Live Demo Moment
+“You should call the salon given their phone number.”
 
-Ecem:
+Instead…
 
-"Let's test the thing that makes it real. I am going to ask OUR agent to call a hairdresser in Paris and ask for an appointment."
+I’m just going to ask the agent.
 
 Prompt on screen:
-
-For this specific demo case Max will be the barber receiving the call from our agent. 
 
 ```text
 Find a hairdresser in Paris near Le Marais. Call them and ask if they have an available appointment this afternoon. For this demo, route the call to my phone.
 ```
-
-If this WAS a normal bot it would tell me:
-“Here is the contact detail of the hairdresser , You should call the salon”
-
-However our agent makes the call for us. 
 
 Maxence:
 
@@ -98,7 +87,7 @@ Agent decides what to do next. Our identity layer executes them: send the email,
 
 Ecem:
 
-The call is the most visual part, so for the demo we call our phone. But the real product is the whole automation layer.
+The call is the most visual part, so for the demo we call our phone. But the real product is the whole automation layer."
 
 "See, that's the moment. The agent did not just answer. It reached out."
 
@@ -110,43 +99,35 @@ Screen: show call result and audit log entry: `phone.call allowed`.
 
 Maxence:
 
-"And if something goes wrong, we revoke the identity. The agent loses its real-world power immediately."
+"And if something goes wrong, we revoke the identity. The agent loses its real-world power immediately." //HOW
 
 ### 2:35-3:35 - Why This Is Infrastructure
 
 Ecem:
 
-"BUTTTT Why are we building this? 
-
-Maxence
-
-Because we think the next wave is not just AI that talks. It is AI that operates."
+"Why are we building this? Because we think the next wave is not just AI that talks. It is AI that operates."
 
 
 "In the next months and years, more and more work will be automated. Agents will not just answer questions. They will call, pay, book and coordinate."
 
 
-But for the future, agents need the infrastructure. They need an identity to operate in real world and serve us. They need permissions, payment and communication rails.
+"But for that future to happen, agents need infrastructure. They need identity. They need permissions, payment and communication rails.
 
-E
+Maxence:
 
-"We are building that now, before the trend becomes obvious!  so we are ready when agentic work becomes real life."
+"We are building that now, before the trend becomes obvious, so we are ready when agentic work becomes real life."
 
-"The reason we focused on infrastructure is that we remove the integration pain Normally you would have to connect voice providers like ElevenLabs, phone providers, payment cards, authorization, webhooks, and audit logs.But we integrate the identity in one line of code. 
-
-M:
-
-It's very interesting but who can benefit?
-
-Anyone really but most importantly every serious agent builder hits the same wall. - The pain of finding a customer"
-
-Every founder in this room is a potential customer.IN EVERY HACKATHON there are so many start ups but without no customer or no investor for their amazing idea.
+"The reason we focused on infrastructure is that every serious agent builder hits the same wall. - The pain of finding a customer"
 
 Ecem:
 
-"Imagine the same thing, but not for one call. One agent calls suppliers. Another books interviews. Another waits for replies until the job is actually done.
+"Imagine the same thing, but not for one call. Imagine IN EVERY HACKATHON there are so many start ups but without no customer or no investor
+
+Well with these agentic identities "One agent calls suppliers. Another books interviews. Another waits for replies until the job is actually done.
 
 Screen: show a mock or real task queue with multiple agents: calling, emailing, waiting, following up, booking calls, summarizing results.
+
+The wow factor is that an agent can take responsibility for a real task."
 
 Maxence:
 
@@ -158,7 +139,8 @@ Ecem:
 
 
 Maxence:
-AI agents should not be trapped in a textbox.
+
+"AI agents should not be trapped in a textbox."
 
 Everyone is trying to build something very impressive but they are not thinking outside of the trapped AI box... Thats where we come to help you automise in real life with a real value. 
 

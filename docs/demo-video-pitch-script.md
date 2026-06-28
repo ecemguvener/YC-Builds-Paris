@@ -2,6 +2,8 @@
 
 Goal: make the judges feel the jump from "AI that replies" to "AI that follows through."
 
+Target length: about 6 minutes, with a full 1-minute emotional close.
+
 <!-- The message we are trying to give is: -->
 
 AI agents already have brains. What they are missing is a real-world identity.
@@ -12,9 +14,11 @@ The wow: the hard part is not prompting the agent. The hard part is linking real
 
 Problem we solve: every hackathon team, startup, and agent builder wants agents that can act, but they get blocked by real-world integrations. Voice providers, email providers, payment cards, authorization, linking accounts, approvals, limits, logs, and revocation are high-friction work. We become the identity and automation layer that can sit under any agent, in any product, anywhere.
 
+Why we are building this now: over the next months and years, more work will move from "humans using software" to "agents operating software and services for humans." When that trend becomes real life, the winners will need identity, permissions, payments, communication, and auditability already in place. We are building the rails now, so we are ready when every product needs agentic workers.
+
 <!-- Script -->
 
-### 0:00-0:35 - Hook
+### 0:00-0:35 - Hook: The Real Problem
 
 Ecem, to camera:
 
@@ -38,7 +42,7 @@ Ecem:
 
 Screen: show the dashboard/chatbox or terminal ready to create an agent identity.
 
-### 0:35-1:30 - Create the Agent
+### 0:35-1:35 - Create the Agent Identity
 
 Maxence:
 
@@ -70,11 +74,11 @@ Ecem:
 
 Screen: show cards or JSON response for phone, email, calendar URL, payment, permissions.
 
-### 1:30-2:35 - Live Demo Moment
+### 1:35-2:45 - Demo: One Agent, Multiple Real-World Actions
 
 Ecem:
 
-"Let's test the thing that makes it feel real. I am going to ask the agent to handle a small real-world workflow: reach out, follow up, and book something."
+"Let's test the thing that makes it feel real. I am going to ask the agent to handle a small real-world workflow, not just answer a question."
 
 Prompt on screen:
 
@@ -91,7 +95,7 @@ Maxence:
 
 Ecem:
 
-"The call is the most visual part, so for the demo we route it to our phone. But the real product is the whole automation layer."
+"The phone call is the most visual part, so for the demo we route it to our phone. But the real product is the whole automation layer: email, calls, calendar, payments, approvals, and logs."
 
 Screen: show phone tool call or chat response. Then show the teammate's phone ringing.
 
@@ -101,7 +105,7 @@ Teammate, acting as hairdresser:
 
 Ecem, reacting naturally:
 
-"Wait, that's the moment. The agent did not just answer. It reached out."
+"Wait, that's the moment. The agent did not just answer. It took the next step."
 
 Maxence:
 
@@ -119,7 +123,7 @@ Maxence:
 
 "And if something goes wrong, we revoke the identity. The agent loses its real-world power immediately."
 
-### 2:35-3:35 - Why This Is Infrastructure
+### 2:45-3:45 - Why This Is Infrastructure
 
 Ecem:
 
@@ -147,7 +151,25 @@ Maxence:
 
 "This is why everyone building agents is our customer. This infrastructure can be layered into anything, anywhere."
 
-### 3:35-4:28 - The Bigger Vision
+### 3:45-4:25 - Why We Are Building This Now
+
+Ecem:
+
+"Why are we building this? Because we think the next wave is not just AI that talks. It is AI that operates."
+
+Maxence:
+
+"In the next months and years, more and more work will be automated. Agents will not just answer questions. They will email, call, pay, book, wait, follow up, and coordinate."
+
+Ecem:
+
+"But for that future to happen, agents need infrastructure. They need identity. They need permissions. They need payment rails. They need communication rails. They need logs."
+
+Maxence:
+
+"We are building that now, before the trend becomes obvious, so we are ready when agentic work becomes real life."
+
+### 4:25-5:00 - The Bigger Vision
 
 Maxence:
 
@@ -165,13 +187,9 @@ Maxence:
 
 Ecem:
 
-"That is why identity matters. A long-running agent cannot just be a prompt. It needs a stable identity, a way to contact people, a way for people to contact it back, and a record of everything it did."
-
-Maxence:
-
 "That is the difference between a conversation and a workforce."
 
-### 4:28-4:52 - Why This Wins
+### 5:00-5:25 - Why This Wins
 
 Ecem:
 
@@ -179,13 +197,13 @@ Ecem:
 
 Maxence:
 
-"Developers should not spend days wiring high-friction integrations before their agent can do one useful thing. They should initialize identity once, give the token to the agent, and let the agent act safely."
+"Developers should not spend days wiring high-friction integrations before their agent can do one useful thing. They should initialize identity once, with one line of code, and let the agent act safely."
 
 Ecem:
 
 "This is the missing layer between AI reasoning and real-world execution."
 
-### 4:52-5:05 - Close
+### 5:25-6:25 - One-Minute Final Close
 
 Maxence:
 
@@ -193,15 +211,35 @@ Maxence:
 
 Ecem:
 
-"We give them identity, permissions, tools, and time."
+"They should be able to work for us. They should send the email, make the call, wait for the reply, book the meeting, pay when they are allowed to pay, and come back when the job is done."
+
+Maxence:
+
+"That is why everyone in this room is our customer."
+
+Ecem:
+
+"Every team here needs this. Not someday. Soon. If you are building a startup, you do not just need a model that writes a plan. You need workers that can act on the plan."
+
+Maxence:
+
+"You need agents that can find customers, find investors, reach out, follow up, schedule meetings, collect answers, and keep moving while you sleep."
+
+Ecem:
+
+"And if you are building any agent product, you need this infrastructure underneath it. You need identity. You need permissions. You need payments. You need communication. You need logs. You need a way to turn the agent off."
+
+Maxence:
+
+"This is why we are building now. Because when everything becomes automated, the question will not be who has the best demo. The question will be who has the infrastructure that lets agents operate safely in the real world."
+
+Ecem:
+
+"We are building that layer before the trend becomes obvious, so when agentic work becomes real life, we are already there."
 
 Both:
 
-"So they can finally get things done."
-
-Final memory line, optional if you have 5 extra seconds:
-
-"Every builder here needs agents that can stay alive, find customers, find investors, follow up, book meetings, and keep working. We make those agents real workers, with one line of integration."
+"We give agents identity, permissions, tools, and time, so they can finally get things done."
 
 ## Backup 60-Second Version
 
