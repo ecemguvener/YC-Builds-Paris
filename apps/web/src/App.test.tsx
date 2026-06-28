@@ -198,7 +198,7 @@ describe("App", () => {
     });
     fireEvent.click(within(passwordPanel).getByRole("button", { name: "Continue" }));
 
-    expect(await screen.findByRole("heading", { name: "Your sites" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Agent identities" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/dashboard");
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/auth\/login$/),
@@ -223,7 +223,7 @@ describe("App", () => {
     });
     fireEvent.click(within(passwordPanel).getByRole("button", { name: "Continue" }));
 
-    expect(await screen.findByRole("heading", { name: "Your sites" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Agent identities" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/dashboard");
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/auth\/signup$/),
@@ -236,7 +236,7 @@ describe("App", () => {
 
     render(<App />);
 
-    expect(await screen.findByRole("heading", { name: "Your sites" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Agent identities" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
 
     await waitFor(() => {
@@ -249,7 +249,7 @@ describe("App", () => {
     );
   });
 
-  it("shows credentials by default without runtime mode controls", async () => {
+  it("shows general settings by default and renders the phone tab", async () => {
     stubDashboardFetch(null);
 
     render(<App />);
@@ -258,28 +258,25 @@ describe("App", () => {
 
     expect(`${window.location.pathname}${window.location.search}`).toBe("/dashboard/site/site_1?tab=credentials");
     expect(await screen.findByRole("tab", { name: "Credentials", selected: true })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Install snippet" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Phone" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Identity" })).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Runtime mode" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "Interaction mode" })).not.toBeInTheDocument();
-    expect(screen.getByText("DOM-first")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "CLI API key" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("tab", { name: "Documentation" }));
-
-    expect(`${window.location.pathname}${window.location.search}`).toBe("/dashboard/site/site_1?tab=documentation");
-    expect(await screen.findByRole("tab", { name: "Documentation", selected: true })).toBeInTheDocument();
-    expect(screen.getByText(/npx barkan connect/)).toBeInTheDocument();
   });
 
-  it("opens a site detail documentation route directly", async () => {
-    stubDashboardFetch(createRouteDocumentation("proj_site"));
-    window.history.pushState({}, "", "/dashboard/site/site_1?tab=documentation");
+  it("opens a site detail phone route directly", async () => {
+    stubDashboardFetch(null);
+    window.history.pushState({}, "", "/dashboard/site/site_1?tab=phone");
 
     render(<App />);
 
-    expect(await screen.findByRole("tab", { name: "Documentation", selected: true })).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Documentation map" })).toBeInTheDocument();
-    expect(screen.getByText("/dashboard")).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: "Phone", selected: true })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Phone" })).toBeInTheDocument();
+    expect(screen.getByText("+1 (415) 555-0198")).toBeInTheDocument();
+    expect(screen.getByText("mock ElevenLabs · active")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Calling capability" })).toBeInTheDocument();
+    expect(screen.getByText("handled through Chat")).toBeInTheDocument();
+    expect(screen.getByText("No call history yet.")).toBeInTheDocument();
   });
 
   it("defaults a site detail route without a tab to credentials", async () => {
@@ -292,125 +289,32 @@ describe("App", () => {
     expect(`${window.location.pathname}${window.location.search}`).toBe("/dashboard/site/site_1");
   });
 
-  it("shows saved route documentation from site details", async () => {
-    stubDashboardFetch(createRouteDocumentation("proj_site"), null, null, createBackendDocumentation("proj_site"));
-
-    render(<App />);
-
-    fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-
-    expect(await screen.findByRole("heading", { name: "Documentation map" })).toBeInTheDocument();
-    expect(screen.getByText(/2 frontend routes · 1 backend endpoints/)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Frontend routes" })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: "Backend endpoints" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Regenerate doc" })).toBeInTheDocument();
-    expect(screen.getByRole("searchbox", { name: "Search documentation" })).toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole("button", { name: "Backend endpoints" }));
-
-    expect(screen.getByText("POST")).toBeInTheDocument();
-    expect(screen.getByText("/api/tasks")).toBeInTheDocument();
-    expect(screen.getByText("Creates a task for the signed-in user.")).toBeInTheDocument();
-    expect(screen.getByText("title: string required")).toBeInTheDocument();
-  });
-
-  it("does not call regenerate or flash the stepper when existing docs have no local agent", async () => {
-    const fetchMock = stubDashboardFetch(createRouteDocumentation("proj_site"));
-
-    render(<App />);
-
-    fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-    const regenerateButton = await screen.findByRole("button", { name: "Regenerate doc" });
-
-    expect(regenerateButton).toBeEnabled();
-    expect(screen.getByTitle("Run npx barkan connect before regenerating")).toBeInTheDocument();
-    expect(screen.queryByLabelText("Documentation generation progress")).not.toBeInTheDocument();
-    expect(fetchMock.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("/documentation/generate");
-    expect(fetchMock.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("/documentation-agent");
-  });
-
-  it("renders and searches route summaries inside the Documentation tab", async () => {
-    const fetchMock = stubDashboardFetch(createRouteDocumentation("proj_site"));
-    render(<App />);
-
-    fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-
-    expect(await screen.findByRole("heading", { name: "Documentation map" })).toBeInTheDocument();
-    expect(screen.getByText("/")).toBeInTheDocument();
-    expect(screen.getByText("Home page with sign in and sign up entry points.")).toBeInTheDocument();
-    expect(screen.getByText("/dashboard")).toBeInTheDocument();
-    expect(screen.getByText("Dashboard for managing sites, snippets, API keys, and documentation.")).toBeInTheDocument();
-
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search documentation" }), {
-      target: { value: "dashboard" }
-    });
-
-    expect(screen.queryByText("Home page with sign in and sign up entry points.")).not.toBeInTheDocument();
-    expect(screen.getByText("/dashboard")).toBeInTheDocument();
-    expect(fetchMock.mock.calls.map(([input]) => String(input)).join("\n")).not.toContain("/api/atlas/projects");
-  });
-
-  it("shows the local-agent empty state before generation", async () => {
+  it("falls back to general settings for unknown or old site detail tabs", async () => {
     stubDashboardFetch(null);
+    window.history.pushState({}, "", "/dashboard/site/site_1?tab=documentation");
+
     render(<App />);
 
-    fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-
-    expect(await screen.findByRole("heading", { name: "Connect to your codebase" })).toBeInTheDocument();
-    expect(screen.getByText(/npx barkan connect/)).toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: "Credentials", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Identity" })).toBeInTheDocument();
+    expect(screen.queryByRole("tab", { name: "Documentation" })).not.toBeInTheDocument();
   });
 
-  it("generates documentation from the dashboard when the local agent is connected", async () => {
-    const generatedDocumentation = createRouteDocumentation("proj_site");
-    const generatedBackendDocumentation = createBackendDocumentation("proj_site");
-    const fetchMock = stubDashboardFetch(null, createDocumentationAgent(), generatedDocumentation, null, generatedBackendDocumentation);
+  it("renders payments and email tabs from site details", async () => {
+    stubDashboardFetch(null);
+
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Payments" }));
 
-    expect(await screen.findByRole("heading", { name: "Ready to generate documentation" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Generate documentation" }));
+    expect(await screen.findByRole("tab", { name: "Payments", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Payments" })).toBeInTheDocument();
 
-    expect(await screen.findByText("Files selection")).toBeInTheDocument();
-    expect(await screen.findByRole("button", { name: "Regenerate doc" }, { timeout: 3000 })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Generate documentation" })).not.toBeInTheDocument();
-    expect(screen.queryByLabelText("Documentation generation progress")).not.toBeInTheDocument();
-    expect(screen.getByText("/dashboard")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Backend endpoints" }));
-    expect(screen.getByText("/api/tasks")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/sites\/site_1\/documentation\/generate$/),
-      expect.objectContaining({ method: "POST", credentials: "include" })
-    );
-  });
+    fireEvent.click(screen.getByRole("tab", { name: "Email" }));
 
-  it("shows server-tracked documentation generation progress in site details", async () => {
-    stubDashboardFetch(null, createDocumentationAgent(), null, null, null, {
-      projectId: "proj_site",
-      status: "running",
-      activeStep: "frontend_documentation",
-      completedSteps: ["connection"],
-      stepProgress: {
-        connection: { current: 1, total: 1, label: "Connected" },
-        frontend_documentation: { current: 1, total: 2, label: "1/2 files" }
-      },
-      startedAt: "2026-05-18T10:00:00.000Z",
-      updatedAt: "2026-05-18T10:00:01.000Z"
-    });
-    render(<App />);
-
-    fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-
-    expect(await screen.findByLabelText("Documentation generation progress")).toBeInTheDocument();
-    expect(screen.getByText("Wait for connection")).toBeInTheDocument();
-    expect(screen.getByText("Frontend docs")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Generate documentation" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("tab", { name: "Email", selected: true })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Email" })).toBeInTheDocument();
   });
 
   it("only shows the raw API-key copy action for a newly created key", async () => {
@@ -419,16 +323,17 @@ describe("App", () => {
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    expect(await screen.findByRole("heading", { name: "CLI API key" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Copy key" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("tab", { name: "OpenClaw" }));
+    expect(await screen.findByRole("heading", { name: "OpenClaw linking tokens" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy token" })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Create API key" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create link token" }));
 
-    expect(await screen.findByRole("button", { name: "Copy key" })).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: "Copy token" })).toBeInTheDocument();
     expect(screen.queryByDisplayValue("ck_created_secret")).not.toBeInTheDocument();
   });
 
-  it("creates a setup, waits for connection, generates docs, and then shows the install snippet", async () => {
+  it("creates a setup, shows the OpenClaw link prompt, and then shows the identity receipt", async () => {
     const generatedDocumentation = createRouteDocumentation("proj_new");
     const fetchMock = stubOnboardingFetch(generatedDocumentation);
     vi.stubGlobal("navigator", {
@@ -440,20 +345,20 @@ describe("App", () => {
 
     render(<App />);
 
-    fireEvent.click((await screen.findAllByRole("button", { name: "New site" }))[0]);
+    fireEvent.click((await screen.findAllByRole("button", { name: "New identity" }))[0]);
     expect(window.location.pathname).toBe("/new-site");
-    fireEvent.change(await screen.findByLabelText("Site name"), {
+    fireEvent.change(await screen.findByLabelText("Identity name"), {
       target: { value: "New site" }
     });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { name: "Where will it live?" }, { timeout: 3000 })).toBeInTheDocument();
-    fireEvent.change(await screen.findByLabelText("Domain"), {
+    expect(await screen.findByRole("heading", { name: "Connect OpenClaw" }, { timeout: 3000 })).toBeInTheDocument();
+    fireEvent.change(await screen.findByLabelText("OpenClaw endpoint"), {
       target: { value: "new.example.com" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create link prompt" }));
 
-    expect(await screen.findByText("npx barkan connect ck_••••••••")).toBeInTheDocument();
-    expect(screen.queryByText("npx barkan connect ck_onboarding_secret")).not.toBeInTheDocument();
+    expect(await screen.findByText("link token: ck_••••••••")).toBeInTheDocument();
+    expect(screen.queryByText("ck_onboarding_secret")).not.toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/site-setups$/),
       expect.objectContaining({ method: "POST" })
@@ -461,37 +366,38 @@ describe("App", () => {
     expect(
       fetchMock.mock.calls.some(([input, init]) => String(input).endsWith("/api/sites") && init?.method === "POST")
     ).toBe(false);
-    expect(screen.getByText("Run npx barkan connect from the client codebase with this CLI key.")).toBeInTheDocument();
-    expect(screen.getByText("Wait for connection")).toBeInTheDocument();
-    expect(screen.getByText("Backend docs")).toBeInTheDocument();
-    expect(await screen.findByRole("heading", { name: "Connect to your codebase" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
+    expect(await screen.findByRole("heading", { name: "Link existing OpenClaw" })).toBeInTheDocument();
+    expect(screen.getByText("OpenClaw link")).toBeInTheDocument();
+    expect(screen.getByText("Waiting for OpenClaw skill confirmation")).toBeInTheDocument();
+    expect(screen.getByText(/Send this prompt to your OpenClaw instance/)).toBeInTheDocument();
+    expect(screen.getByText(/Project token: proj_new/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy token" }));
 
     expect(await screen.findByRole("button", { name: "Copied" })).toBeInTheDocument();
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith("npx barkan connect ck_onboarding_secret");
-    fireEvent.click(screen.getByRole("button", { name: "Copied" }));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith("ck_onboarding_secret");
+    fireEvent.click(screen.getByRole("button", { name: "Copy prompt" }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledTimes(2);
-    expect(await screen.findByRole("heading", { name: "Ready to install" }, { timeout: 6000 })).toBeInTheDocument();
-    expect(screen.getByText(/data-barkan-site="site_new_key"/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Copy code" }));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-      '<script async src="http://localhost:4000/widget.js" data-barkan-site="site_new_key"></script>'
-    );
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("Confirmation token: ck_onboarding_secret"));
+    fireEvent.click(screen.getByRole("button", { name: "Demo: mark linked" }));
+    expect(await screen.findByRole("heading", { name: "Identity ready" }, { timeout: 6000 })).toBeInTheDocument();
+    expect(screen.getByText(/phone=\+1-415-555-0198/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Copy receipt" }));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("openclaw=new.example.com"));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     expect(await screen.findByRole("heading", { name: "You're all set" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Back to dashboard" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Back to dashboard" }));
-    expect(await screen.findByRole("heading", { name: "Your sites" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Agent identities" })).toBeInTheDocument();
     expect(window.location.pathname).toBe("/dashboard");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(screen.getByText("new.example.com")).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringMatching(/\/api\/site-setups\/proj_new\/documentation\/generate$/),
-      expect.objectContaining({ method: "POST", credentials: "include" })
-    );
+    expect(screen.getByRole("button", { name: /New site/ })).toBeInTheDocument();
+    expect(screen.getAllByText("OpenClaw linked").length).toBeGreaterThan(0);
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/\/api\/site-setups\/proj_new\/complete$/),
-      expect.objectContaining({ method: "POST" })
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ skipDocumentation: true })
+      })
     );
   });
 
@@ -507,22 +413,22 @@ describe("App", () => {
 
     render(<App />);
 
-    fireEvent.click((await screen.findAllByRole("button", { name: "New site" }))[0]);
-    fireEvent.change(await screen.findByLabelText("Site name"), {
+    fireEvent.click((await screen.findAllByRole("button", { name: "New identity" }))[0]);
+    fireEvent.change(await screen.findByLabelText("Identity name"), {
       target: { value: "New site" }
     });
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { name: "Where will it live?" }, { timeout: 3000 })).toBeInTheDocument();
-    fireEvent.change(await screen.findByLabelText("Domain"), {
+    expect(await screen.findByRole("heading", { name: "Connect OpenClaw" }, { timeout: 3000 })).toBeInTheDocument();
+    fireEvent.change(await screen.findByLabelText("OpenClaw endpoint"), {
       target: { value: "new.example.com" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    fireEvent.click(screen.getByRole("button", { name: "Create link prompt" }));
 
-    expect(await screen.findByRole("heading", { name: "Connect to your codebase" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Skip for now" }));
+    expect(await screen.findByRole("heading", { name: "Link existing OpenClaw" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Demo: mark linked" }));
 
-    expect(await screen.findByRole("heading", { name: "Ready to install" })).toBeInTheDocument();
-    expect(screen.getByText(/data-barkan-site="site_new_key"/)).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Identity ready" })).toBeInTheDocument();
+    expect(screen.getByText(/phone=\+1-415-555-0198/)).toBeInTheDocument();
     expect(
       fetchMock.mock.calls.some(([input, init]) =>
         String(input).endsWith("/api/site-setups/proj_new/documentation/generate") && init?.method === "POST"
@@ -537,44 +443,6 @@ describe("App", () => {
     );
   });
 
-  it("shows background onboarding documentation progress in site details after skipping", async () => {
-    const generatedDocumentation = createRouteDocumentation("proj_new");
-    stubOnboardingFetch(generatedDocumentation, {
-      streamDelayMs: 2000
-    });
-
-    render(<App />);
-
-    fireEvent.click((await screen.findAllByRole("button", { name: "New site" }))[0]);
-    fireEvent.change(await screen.findByLabelText("Site name"), {
-      target: { value: "New site" }
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { name: "Where will it live?" }, { timeout: 3000 })).toBeInTheDocument();
-    fireEvent.change(await screen.findByLabelText("Domain"), {
-      target: { value: "new.example.com" }
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-    expect(await screen.findByText("Files selection")).toBeInTheDocument();
-    fireEvent.click(await screen.findByRole("button", { name: "Skip for now" }));
-
-    expect(await screen.findByRole("heading", { name: "Ready to install" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    expect(await screen.findByRole("heading", { name: "You're all set" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Back to dashboard" }));
-
-    const newSiteDomain = await screen.findByText("new.example.com");
-    const newSiteButton = newSiteDomain.closest("button");
-    expect(newSiteButton).not.toBeNull();
-    fireEvent.click(newSiteButton as HTMLButtonElement);
-    fireEvent.click(await screen.findByRole("tab", { name: "Documentation" }));
-
-    expect(await screen.findByLabelText("Documentation generation progress")).toBeInTheDocument();
-    expect(screen.getByText("Wait for connection")).toBeInTheDocument();
-    expect(screen.getByText("Backend docs")).toBeInTheDocument();
-  });
-
   it("deletes a selected site from the site details", async () => {
     const fetchMock = stubDashboardFetch(null);
     vi.stubGlobal("confirm", vi.fn(() => true));
@@ -582,7 +450,7 @@ describe("App", () => {
     render(<App />);
 
     fireEvent.click(await screen.findByRole("button", { name: /Test site/ }));
-    fireEvent.click(await screen.findByRole("button", { name: "Delete site" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Delete identity" }));
 
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -781,6 +649,42 @@ function stubDashboardFetch(
       return new Response(createDocumentationGenerationStream(generatedDocumentation, generatedBackendDocumentation), {
         headers: { "content-type": "text/event-stream" }
       });
+    }
+
+    if (url.endsWith("/api/sites/site_1/payment-activity") && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          account_id: "site_1",
+          payment_identity: {
+            payment_identity_id: "pay_site_1",
+            provider: "mock-stripe",
+            card_last4: "4242",
+            status: "active",
+            created_at: "2026-05-17T10:00:00.000Z"
+          },
+          policy: null,
+          purchase_requests: [],
+          transactions: []
+        })
+      );
+    }
+
+    if (url.endsWith("/api/sites/site_1/email-activity") && method === "GET") {
+      return new Response(
+        JSON.stringify({
+          account_id: "site_1",
+          email_identity: {
+            email_identity_id: "email_site_1",
+            email_address: "agent@identity.barkan.dev",
+            display_name: "Test site",
+            provider: "mock-resend",
+            status: "active",
+            created_at: "2026-05-17T10:00:00.000Z"
+          },
+          messages: [],
+          reply_notifications: []
+        })
+      );
     }
 
     if (url.endsWith("/api/sites/site_1/api-keys") && method === "POST") {

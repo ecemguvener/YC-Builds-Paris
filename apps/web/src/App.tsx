@@ -31,6 +31,7 @@ import {
 } from "./components/ToastNotifications";
 import { PaymentsPanel } from "./components/PaymentsPanel";
 import { EmailPanel } from "./components/EmailPanel";
+import { PhonePanel } from "./components/PhonePanel";
 import {
   api,
   type ChatTheme,
@@ -76,7 +77,7 @@ type DashboardChatMessage = {
     entries: Array<{ question: string; answer: string }>;
   };
 };
-type SiteDetailTab = "credentials" | "installation" | "theme" | "payments" | "email";
+type SiteDetailTab = "credentials" | "installation" | "theme" | "payments" | "email" | "phone";
 type UserSettingsSection = "profile" | "security" | "notifications" | "billing";
 type PanelState = "active" | "hidden" | "incoming" | "outgoing";
 type DocumentationProgressStep = "connection" | DocumentationGenerationStep;
@@ -285,7 +286,7 @@ function getSiteDetailRoute(path: string, search = ""): { siteId: string; tab: S
 
   const rawTab = new URLSearchParams(search).get("tab");
   const tab =
-    rawTab === "installation" || rawTab === "theme" || rawTab === "payments" || rawTab === "email"
+    rawTab === "installation" || rawTab === "theme" || rawTab === "payments" || rawTab === "email" || rawTab === "phone"
       ? rawTab
       : "credentials";
 
@@ -3147,6 +3148,7 @@ function SiteSettingsCategoryIcon({
     | "documentation"
     | "theme"
     | "act-on-behalf"
+    | "phone"
     | "email"
     | "automations"
     | "profile"
@@ -3235,6 +3237,14 @@ function SiteSettingsCategoryIcon({
     return (
       <svg className="site-detail-page__category-icon" viewBox="0 0 20 20" aria-hidden="true">
         <path d="M2.5 5.5A1.5 1.5 0 0 1 4 4h12a1.5 1.5 0 0 1 1.5 1.5v9A1.5 1.5 0 0 1 16 16H4a1.5 1.5 0 0 1-1.5-1.5v-9Zm1.86-.1 5.64 4.02 5.64-4.02H4.36Zm11.14 1.1-5.07 3.61a1 1 0 0 1-1.16 0L4.2 6.5v8H15.8v-8Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "phone") {
+    return (
+      <svg className="site-detail-page__category-icon" viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M5.05 2.25h2.2c.58 0 1.08.4 1.22.96l.6 2.4c.12.47-.05.97-.43 1.27L7.38 7.9a8.1 8.1 0 0 0 4.72 4.72l1.02-1.26c.3-.38.8-.55 1.27-.43l2.4.6c.56.14.96.64.96 1.22v2.2c0 1.1-.9 2-2 2A12.7 12.7 0 0 1 3.05 4.25c0-1.1.9-2 2-2Z" />
       </svg>
     );
   }
@@ -3536,6 +3546,19 @@ function SiteDetailOverlay({
             </button>
             <button
               className="site-detail-page__tab"
+              id="site-detail-phone-tab"
+              type="button"
+              role="tab"
+              aria-label="Phone"
+              aria-selected={activeTab === "phone"}
+              aria-controls="site-detail-phone-panel"
+              onClick={() => onTabChange("phone")}
+            >
+              <SiteSettingsCategoryIcon icon="phone" />
+              <span>Phone</span>
+            </button>
+            <button
+              className="site-detail-page__tab"
               id="site-detail-email-tab"
               type="button"
               role="tab"
@@ -3559,6 +3582,8 @@ function SiteDetailOverlay({
         >
           {activeTab === "payments" ? (
             <PaymentsPanel siteId={site.id} siteName={site.name} />
+          ) : activeTab === "phone" ? (
+            <PhonePanel siteName={site.name} />
           ) : activeTab === "email" ? (
             <EmailPanel siteId={site.id} siteName={site.name} />
           ) : activeTab === "credentials" ? (
