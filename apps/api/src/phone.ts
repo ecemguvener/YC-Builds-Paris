@@ -1,8 +1,12 @@
 import type { AppConfig } from "./config.js";
 
+const callConversationGuidance =
+  "Call naturally and keep the conversation moving. Do not repeatedly ask for confirmation; only confirm final details that affect the outcome, like time, price, address, availability, or cancellation policy.";
+
 export interface PhoneCallRequest {
   toNumber: string;
   task: string;
+  callerName: string;
   agentIdentityName: string;
   recipientName?: string | null;
   context?: string | null;
@@ -72,7 +76,8 @@ export async function placeAgentPhoneCall(request: PhoneCallRequest, config: App
           recipient_name: request.recipientName?.trim() || "the person who answers",
           task,
           call_opening: callBrief.firstMessage,
-          context: request.context?.trim() || "",
+          call_guidance: callConversationGuidance,
+          context: buildCallContext(request.context),
           source_url: request.sourceUrl?.trim() || ""
         }
       }
@@ -109,19 +114,97 @@ export async function placeAgentPhoneCall(request: PhoneCallRequest, config: App
   };
 }
 
+function buildCallContext(context: string | null | undefined): string {
+  const trimmedContext = context?.trim();
+  return [trimmedContext, callConversationGuidance].filter(Boolean).join("\n\n");
+}
+
 function buildPersonalAssistantCallBrief(
   request: PhoneCallRequest,
   task: string
 ): { firstMessage: string } {
-  const recipientName = request.recipientName?.trim() || "the person who answers";
-  const appointmentTask = /\b(book|booking|schedule|appointment|reservation|reserve)\b/i.test(task);
-  const normalizedTask = task.endsWith(".") ? task : `${task}.`;
-
-  const firstMessage = appointmentTask
-    ? `Hi, I'm an AI assistant calling on behalf of a client. I'm calling to book an appointment with ${recipientName}. The request is: ${normalizedTask}`
-    : `Hi, I'm an AI assistant calling on behalf of a client. I'm calling about this request: ${normalizedTask}`;
+  const callerName = request.callerName.trim() || request.agentIdentityName.trim() || "the account owner";
+  const firstMessage = `Hi, I'm calling on behalf of ${callerName}. ${buildNaturalRequest(task, request.recipientName)}`;
 
   return { firstMessage };
+}
+
+function buildNaturalRequest(task: string, recipientName: string | null | undefined): string {
+  const trimmed = task.trim().replace(/[.!?]+$/g, "");
+  const withoutPlease = trimmed.replace(/^please\s+/i, "");
+  const directCallPhrase = withoutPlease.match(/^(?:i\s+need\s+to|i\s+want\s+to|the\s+goal\s+is\s+to)\s+(.+)$/i);
+  const request = stripOutboundCallWrapper(directCallPhrase?.[1] ?? withoutPlease, recipientName);
+  const firstWord = request.split(/\s+/, 1)[0] ?? "";
+
+  if (/^(?:i\s+am|i'm)\s+calling\b/i.test(request)) {
+    return punctuate(capitalizeFirst(request));
+  }
+
+  if (/^(can|could|would|is|are|do|does|did|will|has|have)\b/i.test(firstWord)) {
+    return punctuate(`I'm calling to ask if ${questionToStatement(request)}`);
+  }
+
+  if (/^(ask|book|cancel|change|check|confirm|contact|find|get|invite|move|order|propose|request|reserve|schedule|see|tell|try|update)\b/i.test(firstWord)) {
+    return punctuate(`I'm calling to ${lowercaseFirst(request)}`);
+  }
+
+  return punctuate(`I'm calling about ${lowercaseFirst(request)}`);
+}
+
+function stripOutboundCallWrapper(value: string, recipientName: string | null | undefined): string {
+  const callWrapperMatch = value.match(/^(?:call|phone|ring|contact|reach\s+out\s+to)\s+(.+?)(?:\s+(?:and|to)\s+(.+))$/i);
+  if (callWrapperMatch?.[2]) {
+    return callWrapperMatch[2].trim();
+  }
+
+  if (/^(?:call|phone|ring|contact|reach\s+out\s+to)\b/i.test(value)) {
+    const recipient = recipientName?.trim() || "the recipient";
+    return `speak with ${recipient} about the user's request`;
+  }
+
+  return value;
+}
+
+function lowercaseFirst(value: string): string {
+  return value ? `${value.charAt(0).toLowerCase()}${value.slice(1)}` : value;
+}
+
+function capitalizeFirst(value: string): string {
+  return value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : value;
+}
+
+function questionToStatement(value: string): string {
+  const words = value.split(/\s+/);
+  const auxiliary = words[0]?.toLowerCase() ?? "";
+  const subject = words[1]?.toLowerCase() ?? "";
+  const rest = words.slice(2).join(" ");
+
+  if (!subject || !rest) {
+    return lowercaseFirst(value);
+  }
+
+  if (/^(can|could|would|will|has|have)$/.test(auxiliary)) {
+    return `${subject} ${auxiliary} ${rest}`;
+  }
+
+  if (/^(is|are)$/.test(auxiliary)) {
+    return `${subject} ${auxiliary} ${rest}`;
+  }
+
+  if (/^(do|did)$/.test(auxiliary)) {
+    return `${subject} ${rest}`;
+  }
+
+  if (auxiliary === "does") {
+    const normalizedRest = rest.replace(/^have\b/i, "has");
+    return `${subject} ${normalizedRest}`;
+  }
+
+  return lowercaseFirst(value);
+}
+
+function punctuate(value: string): string {
+  return /[.!?]$/.test(value) ? value : `${value}.`;
 }
 
 function normalizePhoneNumber(value: string): string | null {

@@ -34,6 +34,7 @@ import {
 } from "./components/ToastNotifications";
 import { PaymentsPanel } from "./components/PaymentsPanel";
 import { EmailPanel } from "./components/EmailPanel";
+import { PhonePanel } from "./components/PhonePanel";
 import {
   api,
   type AtlasBackendInventoryDocument,
@@ -85,7 +86,7 @@ type DashboardChatMessage = {
     entries: Array<{ question: string; answer: string }>;
   };
 };
-type SiteDetailTab = "credentials" | "installation" | "documentation" | "theme" | "payments" | "email";
+type SiteDetailTab = "credentials" | "installation" | "theme" | "phone" | "payments" | "email" | "documentation";
 type UserSettingsSection = "profile" | "security" | "notifications" | "billing";
 type DocumentationView = "frontend" | "backend";
 type PanelState = "active" | "hidden" | "incoming" | "outgoing";
@@ -295,7 +296,12 @@ function getSiteDetailRoute(path: string, search = ""): { siteId: string; tab: S
 
   const rawTab = new URLSearchParams(search).get("tab");
   const tab =
-    rawTab === "documentation" || rawTab === "installation" || rawTab === "theme" || rawTab === "payments" || rawTab === "email"
+    rawTab === "documentation" ||
+    rawTab === "installation" ||
+    rawTab === "theme" ||
+    rawTab === "phone" ||
+    rawTab === "payments" ||
+    rawTab === "email"
       ? rawTab
       : "credentials";
 
@@ -3236,9 +3242,9 @@ function SiteSettingsCategoryIcon({
     | "installation"
     | "documentation"
     | "theme"
+    | "phone"
     | "act-on-behalf"
     | "email"
-    | "automations"
     | "profile"
     | "security"
     | "notifications"
@@ -3317,6 +3323,14 @@ function SiteSettingsCategoryIcon({
     return (
       <svg className="site-detail-page__category-icon" viewBox="0 0 20 20" aria-hidden="true">
         <path d="M2.8 4.74c0-.76.84-1.22 1.48-.8l5.86 3.9c.55.37.55 1.18 0 1.54l-5.86 3.9a.96.96 0 0 1-1.48-.8V4.74Zm8.08 0c0-.76.85-1.22 1.48-.8l5.86 3.9c.55.37.55 1.18 0 1.54l-5.86 3.9a.96.96 0 0 1-1.48-.8V4.74Z" />
+      </svg>
+    );
+  }
+
+  if (icon === "phone") {
+    return (
+      <svg className="site-detail-page__category-icon" viewBox="0 0 20 20" aria-hidden="true">
+        <path d="M5.32 2.1c.62-.29 1.36-.06 1.71.52l1.2 2c.31.52.25 1.18-.16 1.63l-.8.89a.46.46 0 0 0-.08.5 9.03 9.03 0 0 0 4.15 4.15.46.46 0 0 0 .5-.08l.89-.8c.45-.41 1.11-.47 1.63-.16l2 1.2c.58.35.81 1.09.52 1.71l-.9 1.94c-.29.62-.92 1-1.6.96C7.92 16.17 3.83 12.08 3.44 5.62c-.04-.68.34-1.31.96-1.6l.92-.42Z" />
       </svg>
     );
   }
@@ -3760,19 +3774,6 @@ function SiteDetailOverlay({
             </button>
             <button
               className="site-detail-page__tab"
-              id="site-detail-documentation-tab"
-              type="button"
-              role="tab"
-              aria-label="Documentation"
-              aria-selected={activeTab === "documentation"}
-              aria-controls="site-detail-documentation-panel"
-              onClick={() => onTabChange("documentation")}
-            >
-              <SiteSettingsCategoryIcon icon="documentation" />
-              <span>Documentation</span>
-            </button>
-            <button
-              className="site-detail-page__tab"
               id="site-detail-theme-tab"
               type="button"
               role="tab"
@@ -3783,6 +3784,19 @@ function SiteDetailOverlay({
             >
               <SiteSettingsCategoryIcon icon="theme" />
               <span>Policy</span>
+            </button>
+            <button
+              className="site-detail-page__tab"
+              id="site-detail-phone-tab"
+              type="button"
+              role="tab"
+              aria-label="Phone"
+              aria-selected={activeTab === "phone"}
+              aria-controls="site-detail-phone-panel"
+              onClick={() => onTabChange("phone")}
+            >
+              <SiteSettingsCategoryIcon icon="phone" />
+              <span>Phone</span>
             </button>
             <button
               className="site-detail-page__tab"
@@ -3811,16 +3825,17 @@ function SiteDetailOverlay({
               <span>Email</span>
             </button>
             <button
-              className="site-detail-page__tab site-detail-page__tab--disabled"
+              className="site-detail-page__tab"
+              id="site-detail-documentation-tab"
               type="button"
               role="tab"
-              aria-selected="false"
-              aria-disabled="true"
-              tabIndex={-1}
-              disabled
+              aria-label="Documentation"
+              aria-selected={activeTab === "documentation"}
+              aria-controls="site-detail-documentation-panel"
+              onClick={() => onTabChange("documentation")}
             >
-              <SiteSettingsCategoryIcon icon="automations" />
-              <span>Event routes</span>
+              <SiteSettingsCategoryIcon icon="documentation" />
+              <span>Documentation</span>
             </button>
           </nav>
         </aside>
@@ -3836,6 +3851,8 @@ function SiteDetailOverlay({
             <PaymentsPanel siteId={site.id} siteName={site.name} />
           ) : activeTab === "email" ? (
             <EmailPanel siteId={site.id} siteName={site.name} />
+          ) : activeTab === "phone" ? (
+            <PhonePanel siteName={site.name} />
           ) : activeTab === "credentials" ? (
             <>
               <header className="site-detail-page__header">
@@ -4085,7 +4102,7 @@ function SiteDetailOverlay({
                 {themeSaveError ? <p className="site-detail-panel__error">{themeSaveError}</p> : null}
               </section>
             </>
-          ) : (
+          ) : activeTab === "documentation" ? (
             <>
               <header className="site-detail-page__header">
                 <div>
@@ -4143,7 +4160,7 @@ function SiteDetailOverlay({
                 )}
               </div>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </section>

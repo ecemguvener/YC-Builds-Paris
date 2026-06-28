@@ -32,6 +32,8 @@ Phone behavior:
 - Prefer official or clearly authoritative public pages when selecting a phone number.
 - If the user provides a phone number, use it directly after normalizing it to E.164 when possible.
 - Before calling, infer a concise task brief for the voice agent: who it is calling, why, and what outcome it should achieve.
+- When the user says "call X and ask/tell/propose Y", X is the person or business the voice agent must call and speak to directly. Do not interpret X as an intermediary who should be asked to call someone else unless the user explicitly says that.
+- Write the call task as the message or question for the recipient, not as "ask the recipient to call/contact...".
 - Do not pretend a call happened unless the place_phone_call tool result says it was queued or started.
 - After a call tool result, summarize the status and the next best step. Mention when a call is simulated because ElevenLabs env vars are missing.
 
@@ -78,7 +80,8 @@ export function registerDashboardChatRoutes(app: FastifyInstance, collections: C
     }
 
     try {
-      const message = await runOpenClawDashboardChat(payload.messages, sites, config, request);
+      const callerName = getUserCallerName(authContext.user.displayName, authContext.user.email);
+      const message = await runOpenClawDashboardChat(payload.messages, sites, config, request, callerName);
       streamChatMessage(request, reply, config, message, config.OPENAI_DASHBOARD_CHAT_MODEL);
     } catch (error) {
       request.log.error({ error }, "dashboard chat OpenClaw request failed");
@@ -105,7 +108,8 @@ async function runOpenClawDashboardChat(
   messages: DashboardChatMessage[],
   sites: SiteDocument[],
   config: AppConfig,
-  request: FastifyRequest
+  request: FastifyRequest,
+  callerName: string
 ): Promise<string> {
   const input: Array<Record<string, unknown>> = messages.map((message) => ({
     role: message.role,
@@ -131,7 +135,7 @@ async function runOpenClawDashboardChat(
 
     input.push(...(response.output ?? []));
     for (const functionCall of functionCalls) {
-      const toolOutput = await runOpenClawTool(functionCall, sites, config);
+      const toolOutput = await runOpenClawTool(functionCall, sites, config, callerName);
       toolResults.push(toolOutput);
       input.push({
         type: "function_call_output",
@@ -219,7 +223,8 @@ function buildOpenClawTools(includeWebSearch: boolean): Array<Record<string, unk
           },
           task: {
             type: "string",
-            description: "Concise call objective and requested outcome for the voice agent."
+            description:
+              "Concise call objective and requested outcome for the voice agent. Phrase it as what the agent should ask, tell, or propose to the recipient directly; do not ask the recipient to call/contact someone else unless the user explicitly requested delegation."
           },
           agent_identity_name: {
             type: "string",
@@ -248,7 +253,8 @@ function buildOpenClawTools(includeWebSearch: boolean): Array<Record<string, unk
 async function runOpenClawTool(
   functionCall: OpenAIFunctionCall,
   sites: SiteDocument[],
-  config: AppConfig
+  config: AppConfig,
+  callerName: string
 ): Promise<Record<string, unknown>> {
   if (functionCall.name !== "place_phone_call") {
     return {
@@ -264,6 +270,7 @@ async function runOpenClawTool(
     const result = await placeAgentPhoneCall({
       toNumber: readNonEmptyString(parsedArguments.to_number) || "",
       task: readNonEmptyString(parsedArguments.task) || "",
+      callerName,
       agentIdentityName,
       recipientName: readNonEmptyString(parsedArguments.recipient_name),
       context: readNonEmptyString(parsedArguments.context),
@@ -284,6 +291,15 @@ async function runOpenClawTool(
     }
     throw error;
   }
+}
+
+function getUserCallerName(displayName: string | null | undefined, email: string): string {
+  const name = displayName?.trim();
+  if (name) {
+    return name;
+  }
+
+  return email.split("@", 1)[0]?.trim() || "the account owner";
 }
 
 function extractFunctionCalls(response: OpenAIResponseObject): OpenAIFunctionCall[] {
