@@ -11,7 +11,14 @@ const close = async () => {
   await database.client.close();
 };
 
-process.on("SIGINT", () => void close().then(() => process.exit(0)));
-process.on("SIGTERM", () => void close().then(() => process.exit(0)));
+const shutdown = () =>
+  void close()
+    .catch((error) => {
+      console.error("shutdown error:", error instanceof Error ? error.message : String(error));
+    })
+    .then(() => process.exit(0));
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
 
 await app.listen({ port: config.API_PORT, host: "0.0.0.0" });

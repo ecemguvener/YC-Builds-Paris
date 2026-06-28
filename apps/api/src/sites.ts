@@ -171,6 +171,7 @@ export function registerSiteRoutes(
         backendDocumentation: documentationBundle.backendInventory
       });
     } catch (error) {
+      request.log.error({ error }, "Atlas documentation generation failed");
       sendEvent("error", { error: `Atlas documentation generation failed: ${getErrorMessage(error)}` });
     } finally {
       reply.raw.end();
@@ -415,6 +416,7 @@ export function registerSiteRoutes(
         backendDocumentation: documentationBundle.backendInventory
       });
     } catch (error) {
+      request.log.error({ error }, "Atlas documentation generation failed");
       sendEvent("error", { error: `Atlas documentation generation failed: ${getErrorMessage(error)}` });
     } finally {
       reply.raw.end();
