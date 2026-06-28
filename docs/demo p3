@@ -1,0 +1,115 @@
+# Demo Video Pitch Script
+
+Goal: make the judges feel the jump from "AI that replies" to "AI that follows through."
+
+Target length: 3 minutes. Keep it fast, emotional, and concrete. The screen capture should prove the product while the presenters explain the meaning.
+
+## Core Message
+
+AI agents already have brains. What they are missing is a real-world identity.
+
+Our identity layer gives any agent a phone number, email address, payment capability, calendar, permissions, audit logs, and a kill switch. OpenClaw stays the brain. The identity layer is the passport and the hands.
+
+The wow: the agent can start a task today, call people, email them, wait for replies, coordinate with other agents, and come back days later with a better answer than a one-shot chat response.
+
+## 3-Minute Script
+
+### 0:00-0:18 - Hook
+
+Ecem, to camera:
+
+"Today, AI can think. But it still cannot live in the real world. It cannot pick up the phone, send the email, pay for something, or wait three days for someone to reply."
+
+Maxence:
+
+"So we built the missing layer: a real-world identity for AI agents. In under a minute, any OpenClaw agent gets a phone number, email, payment access, a calendar, permissions, logs, and a kill switch."
+
+Ecem:
+
+"This is not another chatbot. This is how agents start doing work."
+
+### 0:18-0:55 - Create the Agent
+
+Maxence:
+
+"Let's create a new agent."
+
+Ecem:
+
+"The important part is this token. OpenClaw never needs our Twilio keys, Gmail keys, or payment provider secrets. It only receives this scoped identity token."
+
+Maxence:
+
+"Now the agent has an identity. It has a phone number. It has an email. It has payment access. And every action is permissioned and audited."
+
+### 0:55-1:45 - Live Demo Moment
+
+Ecem:
+
+"Let's test the thing that makes it feel real. I am going to ask the agent to call a hairdresser in Paris and ask for an appointment."
+
+Prompt on screen:
+
+"Find a hairdresser in Paris near Le Marais. Call them and ask if they have an available appointment this afternoon. For this demo, route the call to my phone."
+
+Maxence:
+
+"OpenClaw decides what to do. Our identity layer checks whether the agent is allowed to call, places the call through the phone tool, and writes the action to the audit log."
+
+Teammate, acting as hairdresser:
+
+"Bonjour, yes, we have one appointment at 4:30."
+
+Ecem:
+
+"Wait, that's the moment. The agent did not just answer. It reached out."
+
+Maxence:
+
+"For the hackathon demo this call is routed to us, but the architecture is the same: identity token, permission check, provider call, audit trail, revocation."
+
+### 1:45-2:28 - The Bigger Vision
+
+Ecem:
+
+"Now imagine the same thing, but not for one call. Imagine a research task that runs for a week."
+
+Maxence:
+
+"One agent calls suppliers. Another emails customers. Another books interviews. Another waits for replies. They can talk to each other and keep going until the job is actually done."
+
+Ecem:
+
+"ChatGPT gives you an answer from what it already knows. Our agents can go find out. They can ask real people, wait for real responses, and come back with a report built from the real world."
+
+Maxence:
+
+"That is the difference between a conversation and a workforce."
+
+### 2:28-2:55 - Why This Wins
+
+Ecem:
+
+"Developers should not spend days wiring phone APIs, email APIs, payment APIs, calendar APIs, secrets, permissions, and logs just to make an agent useful."
+
+Maxence:
+
+"They should initialize identity once, give the token to the agent, and let the agent act safely."
+
+Ecem:
+
+"The brain can be OpenClaw, Hermes, or any agent framework. The identity layer is what makes it real."
+
+### 2:55-3:08 - Close
+
+Maxence:
+
+"AI agents should not be trapped in a textbox."
+
+Ecem:
+
+"We give them identity, permissions, and time."
+
+Both:
+
+"So they can finally get things done."
