@@ -38,6 +38,13 @@ function sessionFile(config: AppConfig): string {
   return path.resolve(process.cwd(), config.AMAZON_STORAGE_STATE_PATH);
 }
 
+/** Launch the configured browser engine (default webkit = Safari's engine). */
+async function launchBrowser(config: AppConfig, headless: boolean) {
+  const playwright = await import("playwright");
+  const engine = playwright[config.AMAZON_BROWSER] ?? playwright.webkit;
+  return engine.launch({ headless });
+}
+
 function screenshotsDir(): string {
   const dir = path.resolve(process.cwd(), "data", "amazon-screenshots");
   fs.mkdirSync(dir, { recursive: true });
@@ -54,13 +61,15 @@ function hasSession(config: AppConfig): boolean {
  * session so future order runs skip login.
  */
 export async function captureAmazonLogin(config: AppConfig): Promise<void> {
-  const { chromium } = await import("playwright");
-  const browser = await chromium.launch({ headless: false });
+  const browser = await launchBrowser(config, false);
   const context = await browser.newContext();
   const page = await context.newPage();
-  await page.goto(`${config.AMAZON_BASE_URL}/ap/signin`, { timeout: NAV_TIMEOUT }).catch(() => page.goto(config.AMAZON_BASE_URL).catch(() => undefined));
+  // Open the homepage, then the account/sign-in link (hitting /ap/signin
+  // directly returns Amazon's "not a functioning page" error).
+  await page.goto(config.AMAZON_BASE_URL, { timeout: NAV_TIMEOUT }).catch(() => undefined);
+  await page.locator("#nav-link-accountList, a[data-nav-role='signin']").first().click({ timeout: STEP_TIMEOUT }).catch(() => undefined);
   // eslint-disable-next-line no-console
-  console.log("\n[amazon:login] A browser opened. Sign in to Amazon (handle any 2FA/CAPTCHA).");
+  console.log("\n[amazon:login] A browser opened. Sign in to your Amazon account (handle any 2FA/CAPTCHA).");
   // eslint-disable-next-line no-console
   console.log("[amazon:login] It saves automatically once you're logged in — no need to come back here.\n");
 
@@ -112,8 +121,7 @@ export async function registerAmazonAccount(config: AppConfig): Promise<void> {
     throw new Error("Set AMAZON_ACCOUNT_EMAIL and AMAZON_ACCOUNT_PASSWORD (an inbox you can open for the verification code).");
   }
 
-  const { chromium } = await import("playwright");
-  const browser = await chromium.launch({ headless: false });
+  const browser = await launchBrowser(config, false);
   const context = await browser.newContext();
   const page = await context.newPage();
   await page.goto(config.AMAZON_BASE_URL, { timeout: NAV_TIMEOUT }).catch(() => undefined);
@@ -184,9 +192,8 @@ export async function placeAmazonOrder(query: string, approved: boolean, config:
     return result;
   }
 
-  const { chromium } = await import("playwright");
   const headless = config.AMAZON_HEADLESS === "true";
-  const browser = await chromium.launch({ headless });
+  const browser = await launchBrowser(config, headless);
   const shot = async (name: string) => {
     try {
       const file = path.join(screenshotsDir(), `${Date.now()}-${name}.png`);

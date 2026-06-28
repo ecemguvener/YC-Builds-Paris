@@ -49,7 +49,10 @@ const environmentSchema = z.object({
   // `npm run amazon:login` and persisted to AMAZON_STORAGE_STATE_PATH.
   AMAZON_BASE_URL: z.string().min(1).default("https://www.amazon.com"),
   AMAZON_STORAGE_STATE_PATH: z.string().min(1).default(".amazon-session.json"),
-  AMAZON_HEADLESS: z.string().min(1).default("false")
+  AMAZON_HEADLESS: z.string().min(1).default("false"),
+  // Playwright browser engine for Amazon automation: webkit (Safari engine),
+  // chromium, or firefox.
+  AMAZON_BROWSER: z.enum(["webkit", "chromium", "firefox"]).default("webkit")
 }).transform((environment) => {
   return {
     ...environment,
