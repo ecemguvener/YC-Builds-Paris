@@ -723,7 +723,10 @@ function buildMerchantUrl(merchantName: string, item: string | null, fallback: s
   for (const [name, url] of Object.entries(MERCHANT_HOMEPAGES)) {
     if (key.includes(name)) return url;
   }
-  return fallback ?? null;
+  if (fallback) return fallback;
+  // Always give the user something to click — a search for the exact item.
+  const query = encodeURIComponent((item ?? merchantName).trim() || "shopping");
+  return `https://www.google.com/search?q=${query}`;
 }
 
 function findKnownMerchant(text: string, accountId: string): string | null {

@@ -473,7 +473,9 @@ async function runChatPurchase(
     const merchant = parsed.merchantUrl ? `[${parsed.merchantName}](${parsed.merchantUrl})` : parsed.merchantName;
     const amount = formatPurchaseAmount(parsed.amount, parsed.currency);
     const estimated = parsed.priceEstimated ? " _(estimated)_" : "";
-    const header = `🛒 **${merchant}** — ${amount}${estimated} for **${site.name}**`;
+    const itemLabel = parsed.item ?? parsed.merchantName;
+    const itemLink = parsed.merchantUrl ? `\n\n🔗 **[View what I'm buying: ${itemLabel} →](${parsed.merchantUrl})**` : "";
+    const header = `🛒 **${merchant}** — ${amount}${estimated} for **${site.name}**${itemLink}`;
 
     if (purchase.status === "approved") {
       return `${header}\n\n✅ **Approved** automatically (${purchase.decisionReason}). Open the **Payments** tab on **${site.name}** and hit **Execute** to pay.`;
