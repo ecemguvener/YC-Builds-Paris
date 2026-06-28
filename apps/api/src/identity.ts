@@ -123,6 +123,11 @@ export function registerIdentityRoutes(app: FastifyInstance, config: AppConfig) 
       };
     }
 
+    // Every identity gets its own Amazon shopping account, keyed on its email.
+    const amazonLogin = identity.email ?? `${slug}-${randomId(4)}@${config.EMAIL_FROM_DOMAIN}`;
+    const amazon = { account_id: `amzn_${randomId(8)}`, login_email: amazonLogin, status: "active" as const };
+    pushAudit(identity, "amazon.provision", "allowed", `Amazon account ${amazonLogin} provisioned.`);
+
     return reply.code(201).send({
       agent_id: identity.id,
       identity_token: identity.token,
@@ -132,6 +137,7 @@ export function registerIdentityRoutes(app: FastifyInstance, config: AppConfig) 
       email: identity.email,
       phone: identity.phone,
       calendar_url: identity.calendarUrl,
+      amazon,
       payment,
       tools: identity.tools,
       permissions: serializePermissions(identity),

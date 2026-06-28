@@ -18,6 +18,7 @@ import {
   Plus,
   Search,
   Server,
+  ShoppingCart,
   Sparkles,
   Target,
   Zap,
@@ -144,6 +145,12 @@ const agentIdentityCapabilities = [
     value: "Managed calendar",
     description: "Availability and scheduling",
     Icon: CalendarDays
+  },
+  {
+    label: "Amazon",
+    value: "agent@aidentity.space",
+    description: "Its own Amazon account for autonomous purchases",
+    Icon: ShoppingCart
   }
 ] as const;
 
@@ -201,7 +208,8 @@ openclaw=${endpoint}
 phone=+1-415-555-0198
 email=agent@aidentity.space
 card=visa_4242
-calendar=managed`;
+calendar=managed
+amazon=agent@aidentity.space`;
 }
 
 function isAppRoute(path: string): boolean {
