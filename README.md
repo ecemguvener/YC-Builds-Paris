@@ -1,174 +1,281 @@
-# aidentity.space
+# Agentic Identity Layer
 
-aidentity.space gives an AI agent what it needs to act in the real world scenarios: a phone number, an email address, a payment card, and a calendar. One API call sets everything up. Every action the agent takes (a call, an email, a payment) runs through us, so there is a record of what it did and a limit on what it is allowed to do.
+> One line of integration to give any AI agent a real-world identity.
 
-The agent stays the brain. aidentity.space is the identity + governance layer it plugs into.
+AI agents can reason, plan, and write. But most of them still cannot operate in the real world without a team wiring together voice providers, email providers, payment cards, account linking, authorization, approvals, webhooks, logs, and revocation.
 
-## How it works (the workflow)
+This project gives an agent the missing layer: a real-world identity with a phone number, email address, payment capability, calendar, permissions, audit logs, and a kill switch.
 
-1. **Issue an identity.** `POST /api/identity/init` mints an agent identity and returns an `identity_token` plus the `tool_endpoints` the agent can call. The agent gets an email address (`<name>-<rand>@<EMAIL_FROM_DOMAIN>`), a phone number, a calendar URL, and (optionally) a virtual payment card.
-2. **Link a runtime.** From the dashboard, attach the identity to an existing OpenClaw instance or a managed deployment by copying a setup prompt and confirming the link through a tokenized endpoint.
-3. **The agent acts through its identity.** Using `Authorization: Bearer <identity_token>`, the agent calls the tool endpoints to send email, place calls, make payments, or book calendar events.
-4. **Governance on every action.** Each call is gated by the identity's **permissions**, may require **human approval**, and is written to the **audit log**. Spending runs through a policy engine (approve / reject / requires-approval).
-5. **Revoke instantly.** `POST /api/identity/revoke` is the kill switch — it disables the token so no further action can be taken.
+OpenClaw stays the brain. The identity layer becomes the agent's passport, wallet, inbox, phone, and memory.
 
-**Real-world tools:** email (real send/receive), phone (calls), payments (virtual card + policy), calendar (events). When provider keys are absent, tools run in **mock mode** so the full flow is demoable without external accounts.
+## Why We Are Building This
+
+The next wave is not just AI that talks. It is AI that operates.
+
+In the next months and years, more work will move from humans using software to agents operating software and services for humans. For that to happen, agents need infrastructure before they need more prompts:
+
+- identity
+- permissions
+- communication rails
+- payment rails
+- account linking
+- auditability
+- revocation
+
+We are building that infrastructure now, before the trend becomes obvious.
+
+Everyone building agents is our customer. Everyone in the room is our customer. Hackathon teams and startups need agents that can stay alive, find customers, find investors, follow up, book meetings, collect answers, and keep moving while the founders sleep.
+
+## The Problem
+
+The model is not the hard part anymore.
+
+The hard part is everything around it:
+
+- connecting voice providers like ElevenLabs
+- connecting phone and email providers
+- linking payment cards
+- authorizing sensitive actions
+- setting approval limits
+- protecting raw provider credentials
+- recording what the agent did
+- turning the agent off immediately if something goes wrong
+
+Every serious agent builder hits this wall. We turn that high-friction integration work into one identity initialization call.
+
+## What It Does
+
+An agent identity can be provisioned with:
+
+- phone calls
+- email sending
+- calendar booking
+- payment requests
+- scoped identity tokens
+- permission checks
+- audit logs
+- revocation / kill switch
+
+The agent never receives raw provider secrets. It receives a scoped `identity_live_...` token and calls the identity layer for real-world actions.
+
+## Demo Flow
+
+1. Create a new agent identity.
+2. Choose a runtime, such as OpenClaw, or deploy a managed agent.
+3. Select the tools the agent is allowed to use: phone, email, calendar, payment.
+4. Copy the returned identity token into the agent runtime.
+5. Ask the agent to perform a real-world workflow.
+6. The agent sends email, makes a phone call, creates a calendar step, or requests payment through the identity layer.
+7. Show the audit log.
+8. Revoke the identity to prove the agent loses real-world power immediately.
+
+The phone call is the most visual demo moment, but the product is not a phone-call tool. The product is the automation infrastructure layer behind every real-world agent action.
 
 ## Architecture
 
-- **Web dashboard** — React + Vite in `apps/web` (`@aidentity/web`)
-- **API** — Fastify + MongoDB in `apps/api` (`@aidentity/api`)
-- Capability state (identity, email, payments) is kept in-memory and keyed by an opaque account id; MongoDB stores durable data (users, sessions, sites, API keys, docs).
+```text
+Agent runtime
+  OpenClaw / Hermes / custom agent
+        |
+        | AGENT_IDENTITY_TOKEN
+        v
+Identity Layer API
+  permissions
+  audit logs
+  revocation
+        |
+        +--> Email tool
+        +--> Phone tool
+        +--> Calendar tool
+        +--> Payment tool
+```
+
+Core principle:
+
+> Agents should never receive raw Gmail, Twilio, ElevenLabs, calendar, or payment credentials. They should receive a scoped identity token.
+
+## Key Endpoints
+
+| Method & path | Purpose |
+|---|---|
+| `POST /api/identity/init` | Create an agent identity and scoped token |
+| `POST /api/tools/email/send` | Send email as the agent identity |
+| `POST /api/tools/phone/call` | Make a permissioned phone call |
+| `POST /api/tools/calendar/book` | Book a calendar event |
+| `POST /api/tools/payments/request-purchase` | Request a payment action |
+| `GET /api/identity/:agentId/audit-log` | View all audited actions |
+| `POST /api/identity/revoke` | Revoke the identity token |
+
+## OpenClaw Skill
+
+This repo includes a portable OpenClaw skill:
+
+```text
+openclaw-skills/identity-layer/
+  SKILL.md
+  client.js
+```
+
+The skill teaches OpenClaw to:
+
+- initialize identity before real-world actions
+- store `AGENT_IDENTITY_TOKEN`
+- call email, phone, calendar, payment, audit, and revoke endpoints
+- avoid raw provider credentials
+
+## Hackathon Pitch
+
+The sticky line:
+
+> Everyone in this room is our customer. Because every team here needs agents that can stay alive, find customers, find investors, follow up, book meetings, and keep working.
+
+The one-sentence summary:
+
+> We give agents identity, permissions, tools, and time, so they can finally get things done.
+
+The full demo script is in:
+
+```text
+docs/demo-video-pitch-script.md
+```
+
+## Runtime
+
+- Web dashboard: React + Vite in `apps/web`
+- Node API: Fastify + MongoDB in `apps/api`
+- Embeddable widget package: bundled browser script in `packages/widget`
+- CLI package: local agent and setup helpers in `packages/cli`
 
 ## Prerequisites
 
 - Node.js 18+
-- MongoDB running locally (or a connection string)
-- `OPENAI_API_KEY` — dashboard chat + natural-language email/payment drafting (falls back to a heuristic when unset)
-- `RESEND_API_KEY` — real email sending (mock mode without it)
-- `ELEVENLABS_*` — real outbound calls (mock mode without them)
+- MongoDB
+- API keys for ElevenLabs and OpenAI for real provider-backed voice/documentation features
 
-## Setup
+## Web Setup
 
-Install dependencies (npm workspaces):
+Install dependencies:
 
-```bash
+```powershell
 npm install
 ```
 
-Create `.env` from `.env.example`:
+Create `.env` from `.env.example` and set:
 
 ```text
-NODE_ENV=development
-API_PORT=4001
 PUBLIC_APP_URL=http://localhost:4888
 PUBLIC_API_URL=http://localhost:4001
-MONGODB_URI=mongodb://127.0.0.1:27017/aidentity
+MONGODB_URI=mongodb://127.0.0.1:27017/barkan
 SESSION_SECRET=replace-with-a-long-random-secret
-
-# LLM (dashboard chat + drafting)
-OPENAI_API_KEY=
-OPENAI_DASHBOARD_CHAT_MODEL=gpt-5.4-2026-03-05
-OPENAI_EMAIL_MODEL=gpt-4o-mini
-
-# Voice (optional; mock mode when blank)
 ELEVENLABS_API_KEY=
 ELEVENLABS_AGENT_ID=
 ELEVENLABS_AGENT_PHONE_NUMBER_ID=
 ELEVENLABS_VOICE_ID=kPzsL2i3teMYv0FxEYQ6
-
-# Email capability (Resend). Blank RESEND_API_KEY => mock mode.
-RESEND_API_KEY=
-EMAIL_FROM_DOMAIN=aidentity.space
-EMAIL_WEBHOOK_SECRET=
-# Demo helper: deliver every send to this address via Resend's test sender
-# until your domain is verified (activity log keeps the intended recipient).
-EMAIL_SANDBOX_REDIRECT_TO=
+OPENAI_API_KEY=
+OPENAI_WIDGET_MODEL=gpt-5.4-2026-03-05
+OPENAI_ACTION_MODEL=gpt-5.4-mini-2026-03-17
+OPENAI_ATLAS_MODEL=gpt-5.4-2026-03-05
+OPENAI_DASHBOARD_CHAT_MODEL=gpt-5.4-2026-03-05
 ```
 
-## Running locally
+The dashboard chat simulates an OpenClaw runtime with a phone-call tool. Calls run in mock mode until `ELEVENLABS_API_KEY`, `ELEVENLABS_AGENT_ID`, and `ELEVENLABS_AGENT_PHONE_NUMBER_ID` are all set, then it uses the ElevenLabs outbound-call path.
 
-```bash
+Run locally:
+
+```powershell
 npm run dev
 ```
 
-The dashboard runs on `http://localhost:4888` and the API on `http://localhost:4001`.
+The dashboard runs on `http://localhost:4888` and the API runs on `http://localhost:4001`.
 
-> **macOS note:** `scripts/dev.sh` uses `wait -n`, which needs Bash 4+. The default macOS Bash is 3.2, so run the two workspaces directly instead:
->
-> ```bash
-> API_PORT=4001 PUBLIC_APP_URL=http://localhost:4888 PUBLIC_API_URL=http://127.0.0.1:4001 \
->   npm --workspace @aidentity/api run dev
-> # in a second terminal:
-> API_PROXY_TARGET=http://127.0.0.1:4001 npm --workspace @aidentity/web run dev
-> ```
+On macOS, `/bin/bash` may be too old for `scripts/dev.sh` because it uses `wait -n`. If so, run the same processes from `zsh` or install a newer Bash.
 
-## Demo account
+## Static Prototype
 
-Seed a local demo account with agent identities, OpenClaw links, tokens, and activity:
+This repository also contains a static sandbox at the root:
 
-```bash
-npm run seed:demo
-```
+- `index.html`
+- `app.js`
+- `styles.css`
 
-```text
-Email: demo@aidentity.test
-Password: demo-password
-```
+Open `index.html` directly in a browser to use that standalone prototype.
 
-Override with `DEMO_EMAIL`, `DEMO_PASSWORD`, `DEMO_NAME`.
+## Production Deploy
 
-## Agent tools
+Normal builds are verification-only and do not update production:
 
-All agent-facing endpoints authenticate with `Authorization: Bearer <identity_token>` and are gated by the identity's permissions, human-approval setting, and audit log.
-
-**Identity lifecycle**
-
-| Method & path | Purpose |
-|---|---|
-| `POST /api/identity/init` | Create an identity; returns the token + `tool_endpoints` |
-| `GET /api/identity/:agentId/audit-log` | Full audit trail for the identity |
-| `POST /api/identity/revoke` | Kill switch — revoke the token |
-
-**Email** — real send/receive via Resend (mock when unconfigured)
-
-| Method & path | Purpose |
-|---|---|
-| `POST /api/tools/email/request` | Draft + send from a plain-English instruction |
-| `POST /api/tools/email/send` | Send an explicit `to` / `subject` / `body` |
-| `POST /api/tools/email/pause` · `/resume` | Pause/resume the email identity |
-| `GET /api/identity/:agentId/email-activity` | Messages + reply notifications |
-| `POST /api/webhooks/email/inbound` | Resend inbound webhook (Svix-signature verified) |
-
-**Payments** — virtual card + policy engine; the agent never sees card details
-
-| Method & path | Purpose |
-|---|---|
-| `POST /api/tools/payments/request-purchase` | Request a purchase |
-| `POST /api/tools/payments/request-purchase-from-text` | Parse natural language into a request |
-| `POST /api/tools/payments/:requestId/approve` · `/reject` | Human decision |
-| `POST /api/tools/payments/:requestId/execute` | Execute an approved purchase |
-| `PATCH /api/tools/payments/policy` | Update the spending policy |
-| `GET /api/identity/:agentId/payment-activity` | Policy, requests, and transactions |
-
-**Phone & calendar** — `POST /api/tools/phone/call` and `POST /api/tools/calendar/book` (mock unless provider keys are set).
-
-## Email setup (real sending)
-
-The default domain is `aidentity.space`. To send real email instead of mock:
-
-1. Add the domain in **Resend** and copy the DNS records into your registrar (SPF + DKIM + MX).
-2. Set `RESEND_API_KEY` and `EMAIL_FROM_DOMAIN` in `.env`.
-3. For inbound replies, point Resend Inbound at `POST /api/webhooks/email/inbound` and set `EMAIL_WEBHOOK_SECRET` to the `whsec_…` signing secret.
-
-Before a domain is verified, set `EMAIL_SANDBOX_REDIRECT_TO=<your-resend-account-email>` to have every send delivered to that inbox via Resend's test sender (the activity log still records the intended recipient).
-
-## Production deploy
-
-Builds are verification-only and do not update production:
-
-```bash
+```powershell
 npm run build
 ```
 
-Initialize/reload the production API in PM2, and deploy the web build:
+Initialize or reload the production API process in PM2:
 
-```bash
+```powershell
 npm run pm2:start-prod-api
-npm run deploy:aidentity-web
 ```
 
-## Dev workflow
+Production updates are explicit:
 
-- `npm test` — run the workspace test suites (API: vitest).
-- Type-check a workspace: `npm --workspace @aidentity/api exec tsc -p tsconfig.json --noEmit` (same for `@aidentity/web`).
-- Commit on a feature branch and open a PR; the landing/marketing copy and pricing follow the exec summary (`06-exec-summary-EN-v2.pdf`).
+```powershell
+npm run deploy:barkan-web
+```
 
-## Project structure
+Widget production updates build the API and widget, restart `prod-barkan-api`, and check `/widget.js`:
+
+```powershell
+npm run deploy:barkan-widget
+```
+
+## Payment Tool
+
+The payment tool gives an agent identity a real-world spending capability alongside email, phone, and calendar. It follows the same pattern as the other tools: bearer identity-token auth, policy checks, and audit logs.
+
+The agent never sees card details. It can only request a purchase, and the policy engine decides:
+
+- `approved`
+- `rejected`
+- `requires_approval`
+
+When an identity is initialized with the `payment` tool, the backend provisions a mock virtual card and a default spending policy:
+
+- auto-approve <= £25
+- human approval above the limit
+- blocked categories such as `CryptoExchange`
+
+Agent-facing endpoints use:
+
+```text
+Authorization: Bearer <identity_token>
+```
+
+Payment endpoints:
+
+| Method & path | Purpose |
+|---|---|
+| `POST /api/tools/payments/request-purchase` | Request a purchase (`merchant_name`, `amount`, `currency`, `purpose`) |
+| `POST /api/tools/payments/request-purchase-from-text` | Natural language purchase request |
+| `POST /api/tools/payments/:requestId/approve` | Human approval |
+| `POST /api/tools/payments/:requestId/reject` | Human rejection |
+| `POST /api/tools/payments/:requestId/execute` | Execute an approved purchase |
+| `PATCH /api/tools/payments/policy` | Update the spending policy |
+| `GET /api/identity/:agentId/payment-activity` | Policy, purchase requests, and transactions |
+
+## Project Structure
 
 ```text
 apps/
-  api/   Fastify + MongoDB backend (@aidentity/api)
-  web/   React + Vite dashboard + static homepage in public/aidentity-homepage (@aidentity/web)
-scripts/ dev + deploy helpers
+  api/                     Fastify + MongoDB backend
+  web/                     React + Vite dashboard
+packages/
+  cli/                     CLI and local agent helpers
+  widget/                  Embeddable browser script
+openclaw-skills/
+  identity-layer/          Portable OpenClaw skill
+barkan-injection/          Browser extension wrapper
+docs/
+  demo-video-pitch-script.md
+  openclaw-identity-layer.md
+_bmad/                     BMAD configuration
+.agents/                   BMAD agent skills
+AGENTS.md                  Repo architecture and agent instructions
 ```
