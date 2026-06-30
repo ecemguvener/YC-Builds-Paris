@@ -5,6 +5,7 @@ import type { AppConfig } from "../config.js";
 import type { ApiKeyDocument, AtlasProjectDocument, Collections, SiteDocument, UserDocument } from "../db.js";
 import { generateAtlasBackendInventory, generateAtlasRouteMap, selectAtlasDocumentationFiles } from "./openai.js";
 import { createAtlasProjectId, hashApiKey, isAtlasProjectId } from "../security.js";
+import { parseBearerToken } from "../shared/http.js";
 import { getAtlasAgentStatus } from "./agent-bridge.js";
 
 export interface ApiKeyAuthContext {
@@ -194,17 +195,12 @@ export async function requireApiKeyAuth(
 }
 
 function extractBearerApiKey(request: FastifyRequest): string | null {
-  const authorization = request.headers.authorization;
-  if (typeof authorization !== "string") {
+  const token = parseBearerToken(request.headers.authorization);
+  if (!token?.startsWith("ck_")) {
     return null;
   }
 
-  const [scheme, token] = authorization.split(/\s+/, 2);
-  if (scheme?.toLowerCase() !== "bearer" || !token?.startsWith("ck_")) {
-    return null;
-  }
-
-  return token.trim();
+  return token;
 }
 
 function serializeAtlasUser(user: UserDocument) {

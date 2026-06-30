@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "./config.js";
 import { randomId, randomDigits, slugify } from "./shared/crypto.js";
+import { parseBearerToken } from "./shared/http.js";
 
 type ToolName = "email" | "phone" | "calendar" | "payment";
 type PermissionName = "email.send" | "phone.call" | "calendar.create" | "payment.purchase";
@@ -277,16 +278,10 @@ function checkAction(identity: AgentIdentity, permission: PermissionName, approv
 }
 
 function readBearerIdentity(authorization: string | undefined): AgentIdentity | null {
-  if (!authorization) {
-    return null;
-  }
+  const token = parseBearerToken(authorization);
+  if (!token) return null;
 
-  const [scheme, token] = authorization.split(/\s+/, 2);
-  if (scheme?.toLowerCase() !== "bearer" || !token) {
-    return null;
-  }
-
-  return identitiesByToken.get(token.trim()) ?? null;
+  return identitiesByToken.get(token) ?? null;
 }
 
 function pushAudit(identity: AgentIdentity, action: string, status: AuditLogEntry["status"], detail: string) {
@@ -346,4 +341,3 @@ export function recordIdentityAudit(
   }
   pushAudit(identity, action, status, detail);
 }
-

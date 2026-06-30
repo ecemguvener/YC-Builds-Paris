@@ -9,6 +9,18 @@ export function readNonEmptyString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+export function parseBearerToken(authorization: unknown): string | null {
+  if (typeof authorization !== "string") return null;
+
+  const parts = authorization.trim().split(/\s+/);
+  if (parts.length !== 2) return null;
+
+  const [scheme, token] = parts;
+  if (scheme.toLowerCase() !== "bearer" || !token) return null;
+
+  return token;
+}
+
 export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

@@ -5,6 +5,7 @@ import { WebSocket, WebSocketServer } from "ws";
 import type { AppConfig } from "../config.js";
 import type { ApiKeyDocument, AtlasProjectDocument, Collections, UserDocument } from "../db.js";
 import { hashApiKey } from "../security.js";
+import { parseBearerToken } from "../shared/http.js";
 import type { AtlasBackendInventoryDocument } from "./backend-inventory.js";
 import { createEmptyAtlasBackendInventory, isAtlasBackendInventoryDocument } from "./backend-inventory.js";
 import type { AtlasRouteMapDocument } from "./route-map.js";
@@ -508,17 +509,12 @@ function isDocumentationStep(value: unknown): value is DocumentationGenerationSt
 }
 
 function extractBearerApiKey(request: IncomingMessage): string | null {
-  const authorization = request.headers.authorization;
-  if (typeof authorization !== "string") {
+  const token = parseBearerToken(request.headers.authorization);
+  if (!token?.startsWith("ck_")) {
     return null;
   }
 
-  const [scheme, token] = authorization.split(/\s+/, 2);
-  if (scheme?.toLowerCase() !== "bearer" || !token?.startsWith("ck_")) {
-    return null;
-  }
-
-  return token.trim();
+  return token;
 }
 
 function readRequestPathname(request: IncomingMessage): string {
